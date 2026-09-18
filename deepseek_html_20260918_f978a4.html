@@ -1,0 +1,1851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#170f2e">
+<title>Aura Forge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Cinzel:wght@600;700;900&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --panel-border: rgba(140, 110, 255, 0.35);
+    --accent: #a987ff; --accent-2: #ff9ecb; --gold: #ffd76e;
+    --text: #ece7ff; --text-dim: rgba(236, 231, 255, 0.62);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    --biome-bg: linear-gradient(180deg, #1b1136, #0d0820);
+  }
+  html, body { height: 100%; overflow: hidden; overscroll-behavior: none; position: fixed; width: 100%; touch-action: manipulation; }
+  body { font-family: 'Quicksand', system-ui, sans-serif; background: radial-gradient(circle at 50% 0%, #231a44 0%, #0b0817 60%), #0b0817; color: var(--text); display: flex; justify-content: center; align-items: center; -webkit-font-smoothing: antialiased; user-select: none; -webkit-user-select: none; }
+  #game { width: 100%; height: 100%; background: linear-gradient(160deg, #170f2e, #0e0820); border: 1px solid var(--panel-border); position: relative; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.6); overflow: hidden; }
+  @media (min-width: 900px) and (min-height: 700px) { #game { width: min(1240px, 98vw); height: min(780px, 96vh); border-radius: 18px; } }
+
+  /* Rotate warning */
+  #rotateWarning { position: fixed; inset: 0; z-index: 999; background: linear-gradient(180deg, #1a0e35, #0a0515); display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 40px 24px; color: #ece7ff; }
+  #rotateWarning.show { display: flex; }
+  #rotateWarning .rot-icon { width: 80px; height: 80px; margin-bottom: 24px; position: relative; }
+  #rotateWarning .rot-icon::before { content: ''; position: absolute; inset: 0; border: 4px solid #a987ff; border-radius: 12px; }
+  #rotateWarning .rot-icon::after { content: '↻'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 42px; color: #ff9ecb; }
+  #rotateWarning .rot-title { font-family: 'Fredoka', sans-serif; font-size: 26px; font-weight: 700; background: linear-gradient(180deg, #ff9ecb, #a987ff); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 12px; }
+  #rotateWarning .rot-text { font-size: 14px; color: rgba(236, 231, 255, 0.7); max-width: 320px; line-height: 1.6; }
+  @media (max-width: 820px) and (orientation: portrait) { #rotateWarning.show { display: flex; } }
+
+  /* Start screen */
+  #startScreen { position: absolute; inset: 0; z-index: 200; background: radial-gradient(circle at 50% 20%, #2a1a5a 0%, transparent 50%), linear-gradient(180deg, #1a0e35, #0a0515); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 40px 20px; transition: opacity 0.6s, transform 0.6s; overflow: hidden; }
+  #startScreen.hidden { opacity: 0; transform: scale(1.06); pointer-events: none; }
+  .logo { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: clamp(52px, 13vw, 128px); line-height: 0.92; letter-spacing: -3px; background: linear-gradient(180deg, #ff9ecb 0%, #a987ff 45%, #7fd4ff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; display: block; }
+  .logo-1 { padding-left: 8%; } .logo-2 { padding-right: 4%; }
+  .tagline { font-size: clamp(12px, 3.6vw, 19px); color: rgba(236, 231, 255, 0.7); margin: 12px 0 36px; font-weight: 500; }
+  .enter-btn { font-family: 'Quicksand', sans-serif; font-size: clamp(15px, 4vw, 18px); font-weight: 700; color: #fff; background: linear-gradient(180deg, #a970ff, #7a4ad0); border: 1px solid rgba(200, 176, 255, 0.7); border-radius: 14px; padding: 16px 52px; cursor: pointer; box-shadow: 0 0 40px rgba(169, 135, 255, 0.65); min-height: 52px; }
+  .enter-btn:active { transform: scale(0.98); }
+  .controls { margin-top: 32px; display: flex; flex-direction: column; gap: 12px; align-items: center; color: rgba(236, 231, 255, 0.6); font-size: 13px; font-weight: 500; }
+  .controls .row { display: flex; align-items: center; gap: 8px; }
+  .keycap { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 30px; padding: 0 8px; background: linear-gradient(180deg, #3a2a5a, #241838); border: 1px solid rgba(140, 110, 255, 0.5); border-radius: 8px; font-weight: 700; font-size: 12px; color: #fff; }
+  .keycap.wide { min-width: 64px; padding: 0 12px; }
+
+  #restoreBanner { position: absolute; top: 0; left: 0; right: 0; z-index: 300; padding: calc(12px + var(--safe-top)) 16px 12px 16px; background: linear-gradient(180deg, rgba(80,50,20,0.95), rgba(50,30,10,0.95)); border-bottom: 2px solid rgba(255,200,90,0.5); text-align: center; font-size: 12px; font-weight: 600; color: #ffd76e; transform: translateY(-100%); transition: transform 0.4s; }
+  #restoreBanner.show { transform: translateY(0); }
+  #restoreBanner.success { background: linear-gradient(180deg, rgba(30,60,40,0.95), rgba(20,40,30,0.95)); border-bottom-color: rgba(120,255,180,0.5); color: #9dffcc; }
+  #restoreBanner.error { background: linear-gradient(180deg, rgba(80,20,30,0.95), rgba(50,10,20,0.95)); border-bottom-color: rgba(255,120,150,0.5); color: #ff9ecb; }
+  #restoreBanner .rb-detail { font-size: 10.5px; opacity: 0.85; margin-top: 3px; font-weight: 500; }
+  #restoreBanner .rb-close { position: absolute; top: 50%; right: 14px; transform: translateY(-50%); cursor: pointer; opacity: 0.7; font-size: 16px; padding: 6px; }
+
+  /* Header */
+  header { padding: calc(6px + var(--safe-top)) calc(10px + var(--safe-right)) 6px calc(10px + var(--safe-left)); background: linear-gradient(180deg, rgba(30,20,60,0.85), rgba(15,10,30,0.6)); border-bottom: 1px solid var(--panel-border); display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; z-index: 10; backdrop-filter: blur(6px); gap: 6px; flex-wrap: wrap; min-height: 44px; flex-shrink: 0; }
+  header .stats { display: flex; gap: 4px; flex-wrap: wrap; }
+  header .stat { background: rgba(0,0,0,0.3); border: 1px solid rgba(140,110,255,0.2); border-radius: 999px; padding: 4px 9px; font-weight: 600; font-size: 10.5px; white-space: nowrap; }
+  header .stat b { color: var(--gold); font-weight: 700; }
+  .biome-tag { background: linear-gradient(90deg, var(--biome-color, #7a5aff), rgba(255,255,255,0.1)); border: 1px solid var(--biome-color, #7a5aff); padding: 4px 10px; border-radius: 999px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 5px; font-size: 10.5px; }
+  .biome-tag .timer { opacity: 0.9; font-weight: 600; font-size: 10px; }
+  header .aura-tag { background: linear-gradient(90deg, rgba(169,135,255,0.2), rgba(255,158,203,0.15)); border: 1px solid rgba(169,135,255,0.5); padding: 4px 10px; border-radius: 999px; font-weight: 700; font-size: 10.5px; }
+  header .name-tag { background: linear-gradient(90deg, rgba(255,215,110,0.15), rgba(169,135,255,0.1)); border: 1px solid rgba(255,215,110,0.4); padding: 4px 10px; border-radius: 999px; font-weight: 700; color: var(--gold); font-size: 10.5px; }
+  header .selena-tag { background: linear-gradient(90deg, rgba(120,255,220,0.2), rgba(180,130,255,0.15)); border: 1px solid rgba(120,255,220,0.6); padding: 4px 10px; border-radius: 999px; font-weight: 700; color: #90ffe0; display: none; align-items: center; gap: 4px; font-size: 10.5px; animation: selenaPulse 1.6s ease-in-out infinite; }
+  header .selena-tag.show { display: flex; }
+  @keyframes selenaPulse { 0%,100% { box-shadow: 0 0 8px rgba(120,255,220,0.5); } 50% { box-shadow: 0 0 18px rgba(120,255,220,0.9); } }
+  .hud-btn { background: rgba(30,20,60,0.7); border: 1px solid rgba(140,110,255,0.5); border-radius: 8px; padding: 5px 10px; font-size: 11px; font-weight: 700; color: var(--text); cursor: pointer; font-family: inherit; min-height: 32px; }
+  #toggleUiBtn { display: none; }
+  @media (min-width: 900px) { #toggleUiBtn { display: inline-block; } }
+
+  /* Main layout */
+  #main { flex: 1; display: flex; min-height: 0; position: relative; overflow: hidden; }
+
+  /* THE WORLD VIEWPORT — key changes here */
+  #worldViewport {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0; /* critical for flex children to shrink */
+    min-height: 0;
+    overflow: hidden;
+    touch-action: none;
+    background: var(--biome-bg);
+  }
+  #world {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2200px;
+    height: 1600px;
+    transform: translate(0, 0);
+    background: var(--biome-bg);
+    will-change: transform;
+  }
+  #world::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+  #worldViewport::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%); pointer-events: none; z-index: 20; }
+
+  /* Sprites */
+  .sprite { position: absolute; pointer-events: none; z-index: 1; }
+  .sprite.tree { width: 90px; height: 130px; }
+  .sprite.tree .trunk { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 16px; height: 42px; background: linear-gradient(90deg, #3a2418, #5a3820 40%, #3a2418); border-radius: 3px; }
+  .sprite.tree .canopy { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 90px; height: 96px; border-radius: 50% 50% 45% 45% / 55% 55% 45% 45%; background: linear-gradient(180deg, #6fb87a, #3e7a4c 60%, #2a5a38); }
+  .sprite.tree.pine .canopy { background: linear-gradient(180deg, #4a8a5a, #2a5a3a 60%, #1a3a2a); border-radius: 45% 45% 40% 40% / 60% 60% 40% 40%; height: 110px; width: 76px; }
+  .sprite.tree.snowy .canopy { background: linear-gradient(180deg, #d8eaff, #8fb8d8 55%, #5a7a9a); }
+  .sprite.rock { width: 64px; height: 46px; }
+  .sprite.rock .body { width: 100%; height: 100%; background: linear-gradient(180deg, #7a7a8a, #4a4a5a 60%, #2a2a3a); border-radius: 46% 54% 40% 60% / 60% 55% 45% 40%; }
+  .sprite.rock.snowy .body { background: linear-gradient(180deg, #b8d0e0, #6a8aa0 60%, #3a5a70); }
+  .sprite.flower { width: 22px; height: 30px; }
+  .sprite.flower .stem { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 2.5px; height: 16px; background: linear-gradient(180deg, #5a9a5a, #3a6a3a); border-radius: 2px; }
+  .sprite.flower .petals { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 18px; height: 18px; border-radius: 50%; background: var(--petal, #ff8ab6); }
+  .sprite.flower .center { position: absolute; top: 5px; left: 50%; transform: translateX(-50%); width: 7px; height: 7px; border-radius: 50%; background: radial-gradient(circle, #ffe066, #d4942a); }
+  .sprite.crystal { width: 34px; height: 52px; }
+  .sprite.crystal .shard { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 22px; height: 42px; background: linear-gradient(160deg, #b0e0ff 0%, #6a9aff 45%, #3a5acc 100%); clip-path: polygon(50% 0%, 85% 35%, 75% 100%, 25% 100%, 15% 35%); }
+  .sprite.crystal.pink .shard { background: linear-gradient(160deg, #ffd0ec 0%, #ff6ec0 45%, #cc2a8a 100%); }
+  .sprite.crystal.cyan .shard { background: linear-gradient(160deg, #d0ffff 0%, #6effe0 45%, #2acccc 100%); }
+  .sprite.bush { width: 60px; height: 40px; }
+  .sprite.bush .body { width: 100%; height: 100%; background: linear-gradient(180deg, #5a9a5a, #2a5a2a 70%, #1a3a1a); border-radius: 50% 50% 30% 30% / 60% 60% 40% 40%; }
+  .sprite.snowpile { width: 80px; height: 34px; }
+  .sprite.snowpile .body { width: 100%; height: 100%; background: radial-gradient(ellipse at 40% 30%, #ffffff, #c8dcee 60%, #8aa8c0); border-radius: 50% 50% 40% 40% / 70% 70% 30% 30%; }
+  .sprite.cactus { width: 46px; height: 90px; }
+  .sprite.cactus .body { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 26px; height: 78px; background: linear-gradient(90deg, #2a6a3a, #4a9a5a 45%, #2a6a3a); border-radius: 13px 13px 8px 8px; }
+  .sprite.mushroom { width: 34px; height: 40px; }
+  .sprite.mushroom .cap { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 30px; height: 20px; background: radial-gradient(circle at 35% 30%, #ff9a9a, #cc3a3a 70%, #8a1a1a); border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%; }
+  .sprite.mushroom .stem { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 10px; height: 22px; background: linear-gradient(180deg, #f0e0c0, #c8b890); border-radius: 4px; }
+  .sprite.grass { width: 30px; height: 22px; }
+  .sprite.grass::before, .sprite.grass::after { content: ''; position: absolute; bottom: 0; width: 3px; background: linear-gradient(180deg, transparent, #5a9a5a); border-radius: 2px; }
+  .sprite.grass::before { left: 4px; height: 20px; } .sprite.grass::after { left: 14px; height: 22px; }
+  .structure { position: absolute; pointer-events: none; z-index: 2; }
+  .structure.house { width: 170px; height: 150px; }
+  .structure.house .base { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 150px; height: 90px; background: linear-gradient(180deg, #d8b890, #a88660 70%, #7a5a3a); border-radius: 6px; }
+  .structure.house .base::before { content: ''; position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); width: 32px; height: 46px; background: linear-gradient(180deg, #6a4a2a, #3a2418); border-radius: 4px 4px 0 0; border: 2px solid #5a3a1a; }
+  .structure.house .base::after { content: ''; position: absolute; top: 20px; left: 12px; width: 22px; height: 22px; background: radial-gradient(circle, #ffe9b0, #ffb84d); border-radius: 3px; box-shadow: 100px 0 0 0 #ffe9b0; }
+  .structure.house .roof { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 176px; height: 70px; background: linear-gradient(180deg, #b8444a, #8a2a30 70%, #5a1a20); clip-path: polygon(50% 0%, 100% 100%, 0% 100%); }
+  .structure.tower { width: 120px; height: 210px; }
+  .structure.tower .base { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 82px; height: 150px; background: linear-gradient(180deg, #b0b0c0, #6a6a7a 60%, #3a3a4a); border-radius: 4px; }
+  .structure.tower .base::before { content: ''; position: absolute; top: 28px; left: 50%; transform: translateX(-50%); width: 16px; height: 30px; background: radial-gradient(circle, #ffe9b0, #ffaa55 60%, #8a5a1a); border-radius: 50% 50% 45% 45%; }
+  .structure.tower .spire { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 100px; height: 72px; background: linear-gradient(180deg, #5a3a8a, #3a1a5a); clip-path: polygon(50% 0%, 100% 100%, 0% 100%); }
+  .structure.tent { width: 110px; height: 92px; }
+  .structure.tent .canvas { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 110px; height: 82px; background: linear-gradient(180deg, #e8c890, #b8925a 70%, #8a6a3a); clip-path: polygon(50% 0%, 100% 100%, 0% 100%); }
+  .structure.well { width: 80px; height: 100px; }
+  .structure.well .rim { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 78px; height: 40px; background: linear-gradient(180deg, #a89678, #6a5a3a 60%, #4a3a20); border-radius: 50% 50% 30% 30% / 60% 60% 40% 40%; }
+  .structure.well .post { position: absolute; top: 26px; left: 10px; width: 5px; height: 50px; background: linear-gradient(90deg, #5a3a20, #8a6a40, #5a3a20); }
+  .structure.well .post.right { left: auto; right: 10px; }
+  .structure.well .beam { position: absolute; top: 22px; left: 50%; transform: translateX(-50%); width: 66px; height: 7px; background: linear-gradient(180deg, #8a6a40, #5a3a20); }
+  .structure.well .roof { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 90px; height: 30px; background: linear-gradient(180deg, #8a4a2a, #5a2a1a); clip-path: polygon(50% 0%, 100% 100%, 0% 100%); }
+  .structure.stall { width: 160px; height: 130px; }
+  .structure.stall .counter { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 150px; height: 60px; background: linear-gradient(180deg, #c89868, #8a5a2a 70%, #5a3a1a); border-radius: 4px; }
+  .structure.stall .canopy { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 160px; height: 60px; background: repeating-linear-gradient(90deg, #d84a6a 0 14px, #f8f0e0 14px 28px); border-radius: 6px 6px 0 0; clip-path: polygon(0 0, 100% 0, 92% 100%, 8% 100%); }
+  .structure.shrine { width: 150px; height: 170px; }
+  .structure.shrine .base { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 120px; height: 36px; background: linear-gradient(180deg, #a89678, #6a5a3a); border-radius: 4px; }
+  .structure.shrine .body { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 92px; height: 76px; background: linear-gradient(180deg, #d84a6a, #8a2a4a 70%, #5a1a2a); border-radius: 4px; }
+  .structure.shrine .body::before { content: ''; position: absolute; top: 18px; left: 50%; transform: translateX(-50%); width: 24px; height: 38px; background: #1a0a1a; border-radius: 4px; }
+  .structure.shrine .roof { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 150px; height: 84px; background: linear-gradient(180deg, #6a3a5a, #3a1a2a); clip-path: polygon(50% 0%, 100% 60%, 85% 100%, 15% 100%, 0% 60%); }
+
+  .spawn-marker { position: absolute; width: 100px; height: 50px; pointer-events: none; z-index: 0; transform: translate(-50%, -50%); }
+  .spawn-marker .glow-pool { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(169,135,255,0.55) 0%, rgba(169,135,255,0.08) 65%, transparent 100%); filter: blur(8px); }
+  .spawn-marker .base-ring { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 62px; height: 26px; border-radius: 50%; border: 1.5px solid rgba(200,176,255,0.75); }
+  .spawn-marker .mote { position: absolute; width: 4px; height: 4px; background: #e8d8ff; border-radius: 50%; box-shadow: 0 0 6px #a987ff; bottom: 45%; }
+  .spawn-marker .mote.m1 { left: 22%; } .spawn-marker .mote.m2 { left: 48%; } .spawn-marker .mote.m3 { left: 74%; }
+
+  /* ============================================================
+     CHIBI FULL-BODY MODEL — replaces the egg doll
+     ============================================================ */
+  .chibi {
+    position: relative;
+    width: 56px;
+    height: 92px;
+    filter: drop-shadow(0 6px 8px rgba(0,0,0,0.55)) drop-shadow(0 0 14px var(--glow, rgba(155,107,255,0.6)));
+    transform-origin: bottom center;
+  }
+  /* Large chibi head */
+  .chibi .head {
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 46px; height: 44px;
+    border-radius: 50% 50% 48% 48% / 55% 55% 45% 45%;
+    background: radial-gradient(ellipse at 50% 40%, #ffeedd 0%, #ffdcc2 100%);
+    border: 1.5px solid rgba(180, 130, 90, 0.35);
+    z-index: 3;
+    overflow: visible;
+  }
+  /* Hair — varies per character via --hair-color */
+  .chibi .head .hair-top {
+    position: absolute;
+    top: -2px; left: -2px; right: -2px;
+    height: 27px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--hair-color, #ff8ab6) 65%, #ffffff) 0%, var(--hair-color, #ff8ab6) 60%, color-mix(in srgb, var(--hair-color, #ff8ab6) 70%, #000000) 100%);
+    border-radius: 50% 50% 40% 40% / 70% 70% 30% 30%;
+    z-index: 1;
+  }
+  .chibi .head .hair-top::before {
+    content: '';
+    position: absolute;
+    top: 3px; left: 8px;
+    width: 16px; height: 6px;
+    background: radial-gradient(ellipse, rgba(255,255,255,0.75), transparent 70%);
+    border-radius: 50%;
+    filter: blur(1.5px);
+  }
+  /* Side locks / bangs */
+  .chibi .head .hair-side {
+    position: absolute;
+    top: 8px;
+    width: 12px; height: 32px;
+    background: var(--hair-color, #ff8ab6);
+    border-radius: 50% 50% 40% 40% / 40% 40% 60% 60%;
+    z-index: 2;
+  }
+  .chibi .head .hair-side.left { left: -4px; }
+  .chibi .head .hair-side.right { right: -4px; }
+  /* Face features */
+  .chibi .head .face-eye {
+    position: absolute;
+    top: 55%;
+    width: 7px; height: 9px;
+    background: #2a1a3a;
+    border-radius: 50%;
+    z-index: 4;
+  }
+  .chibi .head .face-eye::before { content: ''; position: absolute; top: 1px; left: 1px; width: 2.5px; height: 3px; background: #fff; border-radius: 50%; }
+  .chibi .head .face-eye::after { content: ''; position: absolute; bottom: 1px; right: 1px; width: 1.2px; height: 1.2px; background: rgba(255,255,255,0.8); border-radius: 50%; }
+  .chibi .head .face-eye.left { left: 24%; } .chibi .head .face-eye.right { right: 24%; }
+  .chibi .head .face-blush {
+    position: absolute;
+    top: 66%;
+    width: 7px; height: 3.5px;
+    background: radial-gradient(ellipse, rgba(255,120,160,0.85), transparent 80%);
+    border-radius: 50%;
+    z-index: 4;
+  }
+  .chibi .head .face-blush.left { left: 12%; } .chibi .head .face-blush.right { right: 12%; }
+  .chibi .head .face-mouth {
+    position: absolute;
+    top: 70%; left: 50%;
+    transform: translateX(-50%);
+    width: 5px; height: 3px;
+    border-bottom: 1.4px solid #a04a5a;
+    border-radius: 0 0 50% 50%;
+    z-index: 4;
+  }
+  /* Body */
+  .chibi .body {
+    position: absolute;
+    bottom: 14px; left: 50%;
+    transform: translateX(-50%);
+    width: 32px; height: 32px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--body-color, #9b6bff) 55%, #ffffff) 0%, var(--body-color, #9b6bff) 50%, color-mix(in srgb, var(--body-color, #9b6bff) 70%, #000000) 100%);
+    border-radius: 42% 42% 38% 38% / 45% 45% 55% 55%;
+    box-shadow: inset -3px -4px 6px rgba(0,0,0,0.28), inset 3px 3px 5px rgba(255,255,255,0.35);
+    z-index: 2;
+    overflow: hidden;
+  }
+  .chibi .body::before {
+    content: '';
+    position: absolute;
+    top: 4px; left: 5px;
+    width: 8px; height: 10px;
+    background: radial-gradient(ellipse, rgba(255,255,255,0.65), transparent 70%);
+    border-radius: 50%;
+    filter: blur(1.5px);
+  }
+  /* Arms */
+  .chibi .arm {
+    position: absolute;
+    top: 46px;
+    width: 9px; height: 22px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--body-color, #9b6bff) 55%, #ffffff) 0%, var(--body-color, #9b6bff) 60%, color-mix(in srgb, var(--body-color, #9b6bff) 70%, #000000) 100%);
+    border-radius: 50% 50% 45% 45% / 40% 40% 60% 60%;
+    box-shadow: inset -2px -2px 3px rgba(0,0,0,0.25);
+    z-index: 1;
+    transform-origin: top center;
+  }
+  .chibi .arm.left { left: 4px; transform: rotate(12deg); }
+  .chibi .arm.right { right: 4px; transform: rotate(-12deg); }
+  /* Legs */
+  .chibi .leg {
+    position: absolute;
+    bottom: 0;
+    width: 10px; height: 18px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--body-color, #9b6bff) 45%, #1a1a2a) 0%, #2a2a3a 60%, #1a1a2a 100%);
+    border-radius: 40% 40% 30% 30% / 50% 50% 30% 30%;
+    z-index: 1;
+  }
+  .chibi .leg.left { left: 14px; }
+  .chibi .leg.right { right: 14px; }
+  /* Feet / shoes */
+  .chibi .foot {
+    position: absolute;
+    bottom: -1px;
+    width: 13px; height: 6px;
+    background: linear-gradient(180deg, #3a3a4a, #1a1a2a);
+    border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    z-index: 1;
+  }
+  .chibi .foot.left { left: 12px; }
+  .chibi .foot.right { right: 12px; }
+  /* Neck line — hides the seam between head and body */
+  .chibi .neck {
+    position: absolute;
+    top: 42px; left: 50%;
+    transform: translateX(-50%);
+    width: 14px; height: 6px;
+    background: #ffdcc2;
+    border-radius: 0 0 40% 40%;
+    z-index: 2;
+  }
+
+  /* --- OUTFIT VARIANTS --- */
+  /* MIKO — shrine maiden */
+  .chibi .body.miko, .chibi .arm.miko, .chibi .leg.miko {
+    background: linear-gradient(180deg, #ffffff 0%, #f8f8f8 40%, #d8324a 41%, #b01a30 100%);
+  }
+  .chibi .body.miko::after {
+    content: '';
+    position: absolute;
+    top: 40%; left: 0; right: 0;
+    height: 5px;
+    background: linear-gradient(180deg, #ff5572, #8a1020);
+    box-shadow: inset 0 -1px 2px rgba(0,0,0,0.3);
+  }
+  /* WITCH — Naomi */
+  .chibi .body.witch, .chibi .arm.witch, .chibi .leg.witch {
+    background: linear-gradient(180deg, #5a3a9a 0%, #3a1a6a 45%, #2a0a4a 100%);
+  }
+  .chibi .body.witch::after {
+    content: '';
+    position: absolute;
+    top: 40%; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(180deg, #ffd76e, #b8842a);
+    box-shadow: 0 0 4px rgba(255,215,110,0.6);
+  }
+  /* MERCHANT — Mika */
+  .chibi .body.merchant, .chibi .arm.merchant, .chibi .leg.merchant {
+    background: linear-gradient(180deg, #ffe8b0 0%, #e8c068 45%, #b88a3a 100%);
+  }
+  .chibi .body.merchant::after {
+    content: '';
+    position: absolute;
+    top: 42%; left: 0; right: 0;
+    height: 5px;
+    background: linear-gradient(180deg, #6a3a1a, #3a1a0a);
+  }
+  /* TRAVELER — Selena */
+  .chibi .body.traveler, .chibi .arm.traveler, .chibi .leg.traveler {
+    background: linear-gradient(180deg, #5aaa9a 0%, #2a7a6a 45%, #1a4a4a 100%);
+  }
+  .chibi .body.traveler::after {
+    content: '';
+    position: absolute;
+    top: 40%; left: 0; right: 0;
+    height: 5px;
+    background: linear-gradient(180deg, #c8a0ff, #7a3aff);
+    box-shadow: 0 0 5px rgba(180,130,255,0.7);
+  }
+  /* PLAYER — freeform */
+  .chibi .body.player { background: linear-gradient(180deg, color-mix(in srgb, var(--body-color) 55%, #fff) 0%, var(--body-color) 45%, color-mix(in srgb, var(--body-color) 70%, #000) 100%); }
+  .chibi .arm.player { background: linear-gradient(180deg, color-mix(in srgb, var(--body-color) 55%, #fff) 0%, var(--body-color) 60%, color-mix(in srgb, var(--body-color) 70%, #000) 100%); }
+  .chibi .leg.player { background: linear-gradient(180deg, color-mix(in srgb, var(--body-color) 45%, #1a1a2a) 0%, #2a2a3a 60%, #1a1a2a 100%); }
+
+  /* Accessory badges */
+  .chibi .accessory {
+    position: absolute;
+    top: -14px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+    z-index: 20;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+  }
+  /* Witch hat */
+  .chibi .hat {
+    position: absolute;
+    top: -22px; left: 50%;
+    transform: translateX(-50%);
+    width: 40px; height: 22px;
+    z-index: 20;
+  }
+  .chibi .hat .brim { position: absolute; bottom: 0; left: 0; width: 40px; height: 5px; background: linear-gradient(180deg, #4a2a8a, #2a1a5a); border-radius: 50%; box-shadow: 0 0 6px rgba(120,80,200,0.7); }
+  .chibi .hat .cone { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-bottom: 20px solid #6a3aaa; filter: drop-shadow(0 0 4px rgba(150,100,255,0.6)); }
+  .chibi .hat .star { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); width: 6px; height: 6px; background: #ffd76e; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+  /* Torii gate badge (Aiko) */
+  .chibi .torii { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); width: 26px; height: 18px; z-index: 20; }
+  .chibi .torii::before { content: ''; position: absolute; top: 0; left: 0; width: 26px; height: 3px; background: linear-gradient(180deg, #ff5577, #c02a4a); border-radius: 2px; box-shadow: 0 0 6px rgba(255,80,120,0.8); }
+  .chibi .torii::after { content: ''; position: absolute; bottom: 0; left: 3px; width: 20px; height: 13px; background: linear-gradient(90deg, #e84a6a 0 2.5px, transparent 2.5px 17.5px, #e84a6a 17.5px 20px); }
+  /* Coin satchel (Mika) */
+  .chibi .satchel { position: absolute; top: 50px; right: 2px; width: 14px; height: 12px; background: radial-gradient(circle at 35% 30%, #ffe2a0, #ffc95e 60%, #b8842a); border-radius: 50% 50% 45% 45%; box-shadow: 0 0 6px rgba(255,200,90,0.7); z-index: 15; }
+  .chibi .satchel::before { content: ''; position: absolute; top: -3px; left: 50%; transform: translateX(-50%); width: 12px; height: 2px; background: #8a5a1a; border-radius: 2px; }
+  /* Traveler cloak (Selena) */
+  .chibi .cloak { position: absolute; top: 42px; left: -6px; right: -6px; height: 30px; background: linear-gradient(180deg, rgba(120,255,220,0.5), rgba(120,255,220,0.1)); border-radius: 30% 30% 50% 50%; z-index: 0; }
+  /* Sparkle accessory on traveler */
+  .chibi .sparkle { position: absolute; width: 3px; height: 3px; background: #ffe8a8; border-radius: 50%; box-shadow: 0 0 5px #ffd76e; animation: sparkleTwinkle 1.8s ease-in-out infinite; z-index: 15; }
+  @keyframes sparkleTwinkle { 0%,100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.3); } }
+
+  /* Player wrapper */
+  #avatar {
+    position: absolute;
+    width: 60px; height: 96px;
+    z-index: 5;
+    --body-color: #9b6bff;
+    --hair-color: #b28aff;
+    --glow: rgba(155,107,255,0.8);
+    --glow-soft: rgba(155,107,255,0.35);
+  }
+  #avatar .aura-ring { position: absolute; inset: -18px; border-radius: 50%; border: 3px solid transparent; animation: pulse 2.2s infinite; pointer-events: none; z-index: 10; }
+  @keyframes pulse { 0%,100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 0.95; transform: scale(1.12); } }
+  #avatar.walking .chibi { animation: walkBob 0.4s infinite; }
+  @keyframes walkBob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-4px) rotate(2deg); } }
+  #avatar.idle .chibi .head { animation: headBob 3.4s ease-in-out infinite; transform-origin: bottom center; }
+  @keyframes headBob { 0%,100% { transform: translateX(-50%) rotate(-2deg); } 50% { transform: translateX(-50%) rotate(2deg); } }
+  #avatar .aura-ornament { position: absolute; top: -32px; left: 50%; transform: translateX(-50%); z-index: 15; pointer-events: none; }
+  #avatar .aura-cloak { position: absolute; inset: -10px; border-radius: 50%; z-index: -2; pointer-events: none; opacity: 0.7; }
+  #avatar .aura-effect-layer { position: absolute; inset: -24px; border-radius: 50%; pointer-events: none; z-index: 1; opacity: 0.85; }
+
+  /* NPC */
+  .npc { position: absolute; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: transform 0.2s, opacity 0.4s; z-index: 4; transform: translate(-50%, -100%); }
+  .npc .label { font-size: 10.5px; margin-top: 4px; background: rgba(0,0,0,0.75); padding: 3px 10px; border-radius: 999px; white-space: nowrap; border: 1px solid rgba(140,110,255,0.5); font-weight: 600; }
+  .npc .prompt { position: absolute; top: -38px; left: 50%; transform: translateX(-50%) scale(0.8); background: #fff; color: #2a1a4a; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 8px; white-space: nowrap; opacity: 0; transition: 0.2s; pointer-events: none; z-index: 20; }
+  .npc.in-range .prompt { opacity: 1; transform: translateX(-50%) scale(1); }
+  .npc .key { display: inline-block; background: #2a1a4a; color: #fff; border-radius: 4px; padding: 0 6px; margin-right: 4px; font-size: 10px; }
+  @media (hover: none) and (pointer: coarse) { .npc .prompt { display: none; } .npc.in-range .label { background: linear-gradient(90deg, #7a5aff, #a987ff); border-color: #c8b0ff; } }
+
+  #npc-aiko { --body-color: #ff8ab6; --hair-color: #ffb8d0; --glow: rgba(255,120,180,0.8); }
+  #npc-naomi { --body-color: #b28aff; --hair-color: #d4b8ff; --glow: rgba(180,130,255,0.8); }
+  #npc-mika { --body-color: #ffc95e; --hair-color: #ffe2a0; --glow: rgba(255,200,90,0.8); }
+  #npc-selena { --body-color: #6ee0c8; --hair-color: #a8f0e0; --glow: rgba(120,255,220,0.8); }
+
+  /* Anvil (unchanged) */
+  .anvil-body { position: relative; width: 72px; height: 62px; }
+  .anvil-body .anvil-top { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 68px; height: 20px; background: linear-gradient(180deg, #b8b8c8 0%, #8a8a9a 50%, #5a5a6a 100%); border-radius: 6px 4px 3px 3px; }
+  .anvil-body .anvil-waist { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); width: 40px; height: 16px; background: linear-gradient(180deg, #6a6a7a, #4a4a5a); }
+  .anvil-body .anvil-base { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 54px; height: 30px; background: linear-gradient(180deg, #7a7a8a, #4a4a5a 60%, #2a2a3a); border-radius: 3px 3px 5px 5px; }
+  .anvil-body .anvil-eye { position: absolute; top: 22px; width: 11px; height: 13px; background: #fff; border-radius: 50%; z-index: 3; }
+  .anvil-body .anvil-eye.left { left: 17px; } .anvil-body .anvil-eye.right { right: 17px; }
+  .anvil-body .anvil-pupil { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 7px; height: 9px; background: radial-gradient(circle at 40% 40%, #ffb84d, #8a4a1a 70%, #2a1a10); border-radius: 50%; }
+  .anvil-body .anvil-blush { position: absolute; top: 30px; width: 7px; height: 4px; background: radial-gradient(ellipse, rgba(255,130,175,0.75), transparent 80%); border-radius: 50%; z-index: 3; }
+  .anvil-body .anvil-blush.left { left: 8px; } .anvil-body .anvil-blush.right { right: 8px; }
+  .anvil-body .hammer { position: absolute; top: -18px; right: -6px; width: 20px; height: 20px; transform-origin: bottom left; }
+  .anvil-body .hammer .handle { position: absolute; bottom: 0; left: 2px; width: 3px; height: 14px; background: linear-gradient(90deg, #6a4a2a, #a07a4a); }
+  .anvil-body .hammer .head { position: absolute; top: 0; left: 0; width: 18px; height: 8px; background: linear-gradient(180deg, #b8b8c8, #5a5a6a); border-radius: 2px; }
+
+  /* Mobile controls */
+  #mobileControls { position: absolute; inset: 0; z-index: 30; pointer-events: none; display: none; }
+  #mobileControls.show { display: block; }
+  #joystick { position: absolute; bottom: calc(20px + var(--safe-bottom)); left: calc(20px + var(--safe-left)); width: 130px; height: 130px; border-radius: 50%; background: radial-gradient(circle, rgba(60,40,120,0.35) 0%, transparent 100%); border: 2px solid rgba(169,135,255,0.4); pointer-events: auto; touch-action: none; }
+  #joystickKnob { position: absolute; top: 50%; left: 50%; width: 56px; height: 56px; margin-left: -28px; margin-top: -28px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #c8a0ff, #7a4ad0 55%, #4a2a8a); border: 2px solid rgba(200,176,255,0.9); pointer-events: none; }
+  #mobileActions { position: absolute; bottom: calc(20px + var(--safe-bottom)); right: calc(20px + var(--safe-right)); display: flex; flex-direction: column; gap: 12px; align-items: flex-end; pointer-events: auto; }
+  .action-btn { width: 72px; height: 72px; border-radius: 50%; border: 2px solid rgba(200,176,255,0.7); background: radial-gradient(circle at 35% 30%, #a970ff, #6a3aaa 60%, #3a1a5a); color: #fff; font-weight: 900; cursor: pointer; touch-action: manipulation; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+  .action-btn.roll-btn { width: 84px; height: 84px; background: radial-gradient(circle at 35% 30%, #c8a0ff, #8a4aca 55%, #4a2a8a); }
+  .action-btn.menu-btn { width: 56px; height: 56px; background: radial-gradient(circle at 35% 30%, #8a8ab8, #4a4a6a 60%, #2a2a4a); }
+  .action-btn.interact-btn { width: 64px; height: 64px; background: radial-gradient(circle at 35% 30%, #ffc95e, #d4942a 60%, #8a5a1a); border-color: rgba(255,220,140,0.8); }
+  .action-btn .icon { font-size: 22px; }
+  .action-btn .label { font-size: 9px; }
+  .action-btn.interact-btn:not(.available) { opacity: 0.4; pointer-events: none; }
+  #mobileTopBar { position: absolute; top: calc(50px + var(--safe-top)); right: calc(8px + var(--safe-right)); display: none; flex-direction: column; gap: 8px; z-index: 28; pointer-events: none; }
+  #mobileTopBar.show { display: flex; }
+  #mobileTopBar .mini-btn { width: 44px; height: 44px; border-radius: 12px; border: 1px solid rgba(169,135,255,0.5); background: linear-gradient(180deg, rgba(60,40,120,0.9), rgba(35,22,70,0.9)); color: #fff; font-size: 18px; cursor: pointer; pointer-events: auto; display: flex; align-items: center; justify-content: center; position: relative; }
+  #mobileTopBar .mini-btn .badge { position: absolute; top: -4px; right: -4px; background: var(--accent-2); color: #2a0a2a; border-radius: 999px; padding: 1px 6px; font-size: 9px; font-weight: 800; }
+  #mobileSidebarTab { position: absolute; bottom: calc(20px + var(--safe-bottom)); left: 50%; transform: translateX(-50%); z-index: 27; display: none; padding: 8px 20px; border-radius: 999px 999px 0 0; background: linear-gradient(180deg, rgba(60,40,120,0.95), rgba(35,22,70,0.95)); border: 1px solid rgba(169,135,255,0.6); border-bottom: none; color: #fff; font-weight: 700; font-size: 12px; cursor: pointer; pointer-events: auto; min-height: 36px; }
+  #mobileSidebarTab.show { display: block; }
+
+  /* Sidebar */
+  #sidebar { width: 350px; flex-shrink: 0; background: linear-gradient(180deg, rgba(22,14,44,0.85), rgba(14,8,28,0.85)); border-left: 1px solid var(--panel-border); padding: 12px; display: flex; flex-direction: column; gap: 9px; overflow-y: auto; backdrop-filter: blur(6px); transition: width 0.3s, padding 0.3s, opacity 0.3s, transform 0.3s; }
+  #sidebar.collapsed { width: 0; padding: 0; opacity: 0; border-left: none; overflow: hidden; }
+  #sidebar::-webkit-scrollbar { width: 6px; }
+  #sidebar::-webkit-scrollbar-thumb { background: rgba(140,110,255,0.4); border-radius: 4px; }
+  body.is-mobile-device #sidebar { position: absolute; bottom: 0; left: 0; right: 0; width: 100%; max-height: 68vh; border-left: none; border-top: 1px solid var(--panel-border); border-radius: 20px 20px 0 0; padding: 20px 14px calc(14px + var(--safe-bottom)) 14px; transform: translateY(100%); z-index: 60; }
+  body.is-mobile-device #sidebar.mobile-open { transform: translateY(0); }
+  body.is-mobile-device #sidebar::before { content: ''; position: absolute; top: 6px; left: 50%; transform: translateX(-50%); width: 44px; height: 4px; border-radius: 999px; background: rgba(169,135,255,0.5); }
+  #sidebarBackdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.5); opacity: 0; pointer-events: none; z-index: 55; transition: opacity 0.3s; }
+  #sidebarBackdrop.show { opacity: 1; pointer-events: auto; }
+  body:not(.is-mobile-device) #sidebarBackdrop { display: none; }
+
+  button { font-family: inherit; background: linear-gradient(180deg, #4a2a8a, #2a1a5a); color: #fff; border: 1px solid rgba(169,135,255,0.55); border-radius: 10px; padding: 10px; font-size: 13px; font-weight: 700; cursor: pointer; min-height: 40px; }
+  button:active:not(:disabled) { transform: scale(0.97); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  #rollBtn { display: none; }
+  body:not(.is-mobile-device) #rollBtn { display: block; font-size: 15px; padding: 14px; background: linear-gradient(135deg, #6a3aaa, #a987ff); border: 1px solid #c8b0ff; font-family: 'Cinzel', serif; letter-spacing: 2px; text-transform: uppercase; }
+  .roll-feed-wrap { flex: 1; min-height: 120px; display: flex; flex-direction: column; border: 1px solid rgba(169,135,255,0.4); border-radius: 12px; background: linear-gradient(180deg, rgba(20,12,40,0.75), rgba(12,8,26,0.75)); overflow: hidden; }
+  .roll-feed-header { padding: 8px 12px; background: linear-gradient(180deg, rgba(60,40,120,0.5), rgba(30,20,60,0.5)); border-bottom: 1px solid rgba(169,135,255,0.3); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent); display: flex; justify-content: space-between; align-items: center; }
+  .roll-feed-header .count { font-size: 10px; color: var(--text-dim); }
+  #rollFeed { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .feed-msg { display: flex; gap: 8px; align-items: flex-start; padding: 7px 10px; border-radius: 10px; background: rgba(255,255,255,0.04); border-left: 3px solid var(--msg-color, #7a5aff); font-size: 12px; line-height: 1.4; }
+  .feed-msg .avatar-dot { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.5), var(--msg-color) 60%, var(--msg-dark)); border: 1.5px solid rgba(255,255,255,0.4); }
+  .feed-msg .content { flex: 1; min-width: 0; }
+  .feed-msg .roll-name { font-weight: 800; font-family: 'Cinzel', serif; font-size: 12.5px; }
+  .feed-msg .roll-meta { font-size: 10px; opacity: 0.72; margin-top: 2px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .feed-msg .roll-meta .coin-tag { color: var(--gold); font-weight: 600; }
+  .feed-msg.system-msg { background: rgba(120,80,255,0.08); border-left-color: #7a5aff; font-style: italic; color: var(--text-dim); font-size: 11px; padding: 6px 10px; }
+  .feed-msg.special-msg { background: linear-gradient(90deg, rgba(255,215,110,0.15), transparent); border-left-color: #ffd76e; }
+  .feed-msg.special-msg .content { color: #ffe8a8; }
+  .feed-msg.selena-msg { background: linear-gradient(90deg, rgba(120,255,220,0.15), transparent); border-left-color: #78ffdc; }
+  .feed-msg.selena-msg .content { color: #b8ffe8; }
+  .feed-msg.sell-msg { background: linear-gradient(90deg, rgba(255,215,110,0.1), transparent); border-left-color: #ffd76e; }
+  .feed-msg.sell-msg .content { color: #ffe8a8; }
+  .auto-panel { border: 1px solid rgba(169,135,255,0.4); border-radius: 12px; padding: 10px; background: linear-gradient(180deg, rgba(40,25,80,0.6), rgba(20,12,40,0.6)); display: flex; flex-direction: column; gap: 8px; }
+  .auto-header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; }
+  .auto-toggle { display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 4px; }
+  .switch { width: 40px; height: 22px; background: rgba(0,0,0,0.5); border-radius: 999px; position: relative; border: 1px solid rgba(140,110,255,0.4); }
+  .switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #7a5aff; border-radius: 50%; transition: 0.25s; }
+  .switch.on { background: linear-gradient(90deg, #7a5aff, #ff9ecb); border-color: #c8b0ff; }
+  .switch.on::after { left: 20px; background: #fff; }
+  .auto-options { display: flex; gap: 5px; }
+  .auto-options button { flex: 1; padding: 7px; font-size: 11px; background: rgba(30,20,60,0.6); border-color: rgba(140,110,255,0.3); min-height: 34px; }
+  .auto-options button.active { background: linear-gradient(180deg, #7a5aff, #4a2a8a); border-color: #c8b0ff; }
+  .auto-stat { font-size: 10.5px; opacity: 0.75; display: flex; justify-content: space-between; }
+  .side-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .side-actions button { font-size: 12px; padding: 9px; background: linear-gradient(180deg, rgba(60,40,120,0.9), rgba(35,22,70,0.9)); min-height: 40px; }
+  .side-actions button .badge { display: inline-block; background: var(--accent-2); color: #2a0a2a; border-radius: 999px; padding: 0 6px; font-size: 10px; font-weight: 800; margin-left: 4px; }
+  .save-panel { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .save-panel button { font-size: 11px; padding: 7px; background: rgba(30,20,60,0.6); border-color: rgba(140,110,255,0.3); min-height: 34px; }
+  #hudBottom { position: absolute; bottom: calc(12px + var(--safe-bottom)); left: calc(12px + var(--safe-left)); display: flex; gap: 6px; z-index: 25; pointer-events: none; flex-wrap: wrap; max-width: 60%; }
+  .hud-pill { font-size: 10.5px; background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(140,110,255,0.3); font-weight: 600; color: #d8d0f0; }
+  body.is-mobile-device .hud-pill.desktop-only { display: none; }
+  #saveIndicator { position: absolute; bottom: calc(12px + var(--safe-bottom)); right: calc(12px + var(--safe-right)); font-size: 11px; background: rgba(0,0,0,0.6); padding: 6px 12px; border-radius: 999px; opacity: 0; transition: opacity 0.4s; pointer-events: none; border: 1px solid rgba(120,255,180,0.4); font-weight: 600; color: #9dffcc; z-index: 25; }
+  #saveIndicator.show { opacity: 1; }
+  #saveIndicator.saving { border-color: rgba(255,200,90,0.4); color: #ffd76e; }
+  .buffs-bar { position: absolute; top: calc(56px + var(--safe-top)); left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 26; pointer-events: none; flex-wrap: wrap; justify-content: center; }
+  #biomeBanner { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.5); z-index: 45; text-align: center; pointer-events: none; opacity: 0; transition: opacity 0.5s, transform 0.6s; padding: 0 20px; }
+  #biomeBanner.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  #biomeBanner .b-name { font-family: 'Cinzel', serif; font-size: clamp(32px, 9vw, 48px); font-weight: 900; color: #fff; }
+  #biomeBanner .b-desc { font-size: 13px; color: #ddd; font-style: italic; }
+  .desktop-only { display: none; }
+  body:not(.is-mobile-device) .desktop-only { display: inline-block; }
+
+  /* Modal */
+  #modal { position: absolute; inset: 0; background: rgba(5,2,15,0.85); display: none; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(4px); }
+  #modalBox { width: min(660px, 92%); max-height: 88%; overflow-y: auto; background: linear-gradient(160deg, #221548, #140c2c); border: 1px solid rgba(169,135,255,0.55); border-radius: 18px; padding: 24px; }
+  body.is-mobile-device #modalBox { width: 100%; max-height: 92%; border-radius: 20px 20px 0 0; margin-top: auto; padding: 20px 16px calc(20px + var(--safe-bottom)) 16px; }
+  body.is-mobile-device #modal { align-items: flex-end; }
+  #modalBox h2 { color: var(--gold); margin-bottom: 12px; font-size: clamp(16px, 4.5vw, 20px); font-family: 'Cinzel', serif; }
+  #modalBox p { font-size: 13px; margin-bottom: 10px; line-height: 1.65; }
+  #modalBox .dialogue { background: rgba(255,255,255,0.06); border-left: 3px solid var(--glow, #a987ff); padding: 12px 14px; border-radius: 8px; font-style: italic; margin-bottom: 14px; font-size: 13px; line-height: 1.65; color: #ede5ff; }
+  .modal-btn { display: block; width: 100%; margin-top: 7px; font-size: 13px; padding: 12px; min-height: 44px; }
+  .close-btn { background: linear-gradient(180deg, #6a2a3a, #3a1520); border-color: rgba(255,120,150,0.5); }
+  .inv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin: 12px 0; }
+  @media (max-width: 500px) { .inv-grid { grid-template-columns: repeat(2, 1fr); } }
+  .inv-card { background: rgba(20,12,40,0.7); border: 1px solid rgba(140,110,255,0.25); border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; position: relative; }
+  .inv-card.equipped { border-color: var(--gold); box-shadow: 0 0 16px rgba(255,215,110,0.4); }
+  .inv-card.locked { opacity: 0.45; filter: grayscale(0.7); cursor: not-allowed; }
+  .inv-card.special { border-color: rgba(255,215,110,0.5); background: linear-gradient(160deg, rgba(40,25,80,0.9), rgba(20,12,40,0.9)); }
+  .inv-card.exclusive { border-color: rgba(200,150,255,0.6); }
+  .inv-card .icon { font-size: 22px; font-family: 'Cinzel', serif; font-weight: 700; }
+  .inv-card .name { font-weight: 700; font-size: 12px; margin-top: 4px; word-break: break-word; }
+  .inv-card .rarity { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.75; margin-top: 2px; }
+  .inv-card .count { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.6); border-radius: 999px; padding: 1px 6px; font-size: 10px; font-weight: 800; }
+  .inv-card .chance { font-size: 9.5px; opacity: 0.55; margin-top: 3px; }
+  .inv-card .equip-tag { font-size: 9px; font-weight: 800; color: var(--gold); margin-top: 3px; text-transform: uppercase; }
+  .panel-section-title { font-family: 'Cinzel', serif; color: var(--gold); font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; margin: 14px 0 6px; padding-bottom: 4px; border-bottom: 1px solid rgba(140,110,255,0.3); }
+  .inv-stats { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; font-size: 11px; }
+  .inv-stats span { background: rgba(0,0,0,0.35); border: 1px solid rgba(140,110,255,0.25); border-radius: 999px; padding: 3px 9px; font-weight: 600; }
+  .inv-stats span b { color: var(--gold); }
+  .inv-tabs { display: flex; gap: 4px; margin-bottom: 10px; border-bottom: 1px solid rgba(140,110,255,0.25); flex-wrap: wrap; }
+  .inv-tab { background: transparent; border: none; color: var(--text-dim); padding: 8px 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; border-bottom: 2px solid transparent; border-radius: 0; box-shadow: none; min-height: 34px; }
+  .inv-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .setting-section { margin-bottom: 18px; }
+  .setting-section h3 { font-family: 'Cinzel', serif; color: var(--gold); font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid rgba(140,110,255,0.3); }
+  .color-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 8px; }
+  .color-swatch { aspect-ratio: 1; border-radius: 50%; cursor: pointer; border: 3px solid rgba(255,255,255,0.15); position: relative; }
+  .color-swatch.selected { border-color: var(--gold); box-shadow: 0 0 20px rgba(255,215,110,0.6); transform: scale(1.1); }
+  .color-swatch.selected::after { content: '✓'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-weight: 900; font-size: 16px; }
+  .rarity-toggles { display: flex; flex-direction: column; gap: 6px; }
+  .rarity-toggle { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; background: rgba(20,12,40,0.7); border: 1px solid rgba(140,110,255,0.25); border-radius: 10px; cursor: pointer; }
+  .rarity-toggle .r-name { font-weight: 700; font-size: 12.5px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+  .rarity-toggle .r-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .rarity-toggle .r-desc { font-size: 10.5px; opacity: 0.6; margin-top: 2px; }
+  .rarity-toggle .r-switch { width: 40px; height: 22px; background: rgba(0,0,0,0.5); border-radius: 999px; position: relative; border: 1px solid rgba(140,110,255,0.4); }
+  .rarity-toggle .r-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #666; border-radius: 50%; transition: 0.25s; }
+  .rarity-toggle.on .r-switch { background: linear-gradient(90deg, #7a5aff, #ff9ecb); border-color: #c8b0ff; }
+  .rarity-toggle.on .r-switch::after { left: 20px; background: #fff; }
+  .name-input { width: 100%; padding: 12px 14px; font-size: 15px; font-family: 'Quicksand', sans-serif; font-weight: 600; color: var(--text); background: rgba(20,12,40,0.85); border: 1.5px solid rgba(169,135,255,0.4); border-radius: 10px; outline: none; }
+  .name-preview { margin-top: 8px; font-size: 12px; color: var(--text-dim); }
+  .name-preview b { color: var(--gold); }
+  .shape-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .shape-option { background: rgba(20,12,40,0.7); border: 1.5px solid rgba(140,110,255,0.25); border-radius: 10px; padding: 10px 6px; text-align: center; cursor: pointer; }
+  .shape-option.selected { border-color: var(--gold); }
+  .shape-preview { width: 44px; height: 44px; margin: 0 auto 6px; background: linear-gradient(135deg, #c4a5ff, #9b6bff); }
+  .shape-preview.doll-preview { border-radius: 50% 50% 48% 48% / 58% 58% 42% 42%; height: 54px; }
+  .shape-preview.orb-preview { border-radius: 50%; }
+  .shape-preview.star-preview { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+  .shape-preview.cat-preview { border-radius: 50% 50% 48% 48% / 55% 55% 45% 45%; position: relative; }
+  .shape-preview.cat-preview::before, .shape-preview.cat-preview::after { content: ''; position: absolute; top: -8px; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 12px solid #9b6bff; }
+  .shape-preview.cat-preview::before { left: 4px; } .shape-preview.cat-preview::after { right: 4px; }
+  .shape-option span { font-size: 10.5px; font-weight: 600; color: var(--text-dim); }
+  .backup-row { display: flex; gap: 6px; margin-top: 8px; }
+  .backup-row button { flex: 1; font-size: 11px; padding: 9px; min-height: 40px; }
+  .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(20,12,40,0.7); border: 1px solid rgba(140,110,255,0.25); border-radius: 10px; cursor: pointer; margin-bottom: 6px; }
+  .toggle-row .tr-label { font-weight: 700; font-size: 13px; }
+  .toggle-row .tr-hint { font-size: 10.5px; opacity: 0.65; margin-top: 2px; }
+  .toggle-row .tr-switch { width: 44px; height: 24px; background: rgba(0,0,0,0.5); border-radius: 999px; position: relative; border: 1px solid rgba(140,110,255,0.4); flex-shrink: 0; }
+  .toggle-row .tr-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: #666; border-radius: 50%; transition: 0.25s; }
+  .toggle-row.on .tr-switch { background: linear-gradient(90deg, #7a5aff, #ff9ecb); border-color: #c8b0ff; }
+  .toggle-row.on .tr-switch::after { left: 22px; background: #fff; }
+  .sell-header { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .sell-header button { flex: 1; min-width: 120px; font-size: 11px; padding: 9px; background: linear-gradient(180deg, #8a6a20, #5a4510); border-color: rgba(255, 215, 110, 0.5); }
+  .sell-summary { background: linear-gradient(90deg, rgba(255,215,110,0.1), rgba(255,215,110,0.02)); border: 1px solid rgba(255,215,110,0.35); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .sell-summary .total-value { color: var(--gold); font-weight: 800; font-size: 14px; }
+  .sell-row { display: flex; align-items: center; gap: 10px; background: rgba(20,12,40,0.7); border: 1px solid rgba(140,110,255,0.25); border-radius: 10px; padding: 10px 12px; margin-bottom: 7px; }
+  .sell-row .sr-icon { width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; font-family: 'Cinzel', serif; font-weight: 700; background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.35), currentColor 65%, rgba(0,0,0,0.3)); }
+  .sell-row .sr-info { flex: 1; min-width: 0; }
+  .sell-row .sr-name { font-weight: 700; font-size: 13px; }
+  .sell-row .sr-meta { font-size: 10.5px; opacity: 0.7; margin-top: 2px; }
+  .sell-row .sr-qty { font-size: 12px; font-weight: 800; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,215,110,0.4); border-radius: 999px; padding: 4px 10px; color: var(--gold); min-width: 46px; text-align: center; }
+  .sell-row .sr-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+  .sell-row .sr-actions button { font-size: 10.5px; padding: 6px 10px; min-height: 30px; width: auto; background: linear-gradient(180deg, #8a6a20, #5a4510); border-color: rgba(255, 215, 110, 0.5); }
+  .sell-row .sr-actions button.bulk { background: linear-gradient(180deg, #2a5a8a, #1a3a5a); border-color: rgba(120, 180, 255, 0.5); }
+  .sell-price-tag { color: var(--gold); font-weight: 700; font-size: 11px; }
+  .selena-item { display: flex; align-items: center; gap: 12px; background: rgba(20,50,55,0.6); border: 1px solid rgba(120,255,220,0.25); border-radius: 10px; padding: 11px 13px; margin-bottom: 7px; }
+  .selena-item .s-icon { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; font-family: 'Cinzel', serif; font-weight: 700; background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.4), currentColor 60%, rgba(0,0,0,0.4)); }
+  .selena-item .s-info { flex: 1; min-width: 0; }
+  .selena-item .s-name { font-weight: 700; font-size: 12.5px; }
+  .selena-item .s-desc { font-size: 10.5px; opacity: 0.75; margin-top: 2px; }
+  .selena-item .s-price-row { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .selena-item .s-price { font-size: 12.5px; font-weight: 800; color: #90ffe0; }
+  .selena-item .s-price-old { font-size: 10px; opacity: 0.5; text-decoration: line-through; color: #ff9ecb; }
+  .selena-item button { font-size: 11px; padding: 7px 12px; margin: 0; width: auto; flex-shrink: 0; background: linear-gradient(180deg, #2a7a6a, #1a4a4a); min-height: 36px; }
+  .selena-item .owned-tag { font-size: 9px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: linear-gradient(180deg, #ffd76e, #b8842a); color: #2a1a0a; }
+  #cutscene { position: absolute; inset: 0; background: #000; z-index: 100; display: none; justify-content: center; align-items: center; overflow: hidden; }
+  #cutscene.show { display: flex; }
+  #cutscene .rays { position: absolute; inset: -50%; background: conic-gradient(from 0deg, transparent 0deg, currentColor 15deg, transparent 30deg, transparent 45deg, currentColor 60deg, transparent 75deg, transparent 90deg, currentColor 105deg, transparent 120deg, transparent 135deg, currentColor 150deg, transparent 165deg, transparent 180deg, currentColor 195deg, transparent 210deg, transparent 225deg, currentColor 240deg, transparent 255deg, transparent 270deg, currentColor 285deg, transparent 300deg, transparent 315deg, currentColor 330deg, transparent 345deg); animation: spin 8s linear infinite; opacity: 0.55; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #cutscene .cut-inner { position: relative; text-align: center; z-index: 2; padding: 0 20px; }
+  #cutscene .cut-icon { font-size: clamp(56px, 16vw, 78px); font-family: 'Cinzel', serif; }
+  #cutscene .cut-name { font-size: clamp(32px, 10vw, 58px); font-weight: 900; text-shadow: 0 0 20px currentColor; margin: 14px 0 6px; font-family: 'Cinzel', serif; word-break: break-word; }
+  #cutscene .cut-rarity { font-size: clamp(14px, 4.5vw, 22px); letter-spacing: 8px; text-transform: uppercase; color: #fff; font-family: 'Cinzel', serif; font-weight: 700; }
+  #cutscene .cut-chance { margin-top: 18px; font-size: clamp(12px, 3.5vw, 15px); color: #ccc; }
+  #cutscene .cut-skip { position: absolute; bottom: calc(26px + var(--safe-bottom)); right: calc(26px + var(--safe-right)); font-size: 12px; opacity: 0.8; cursor: pointer; color: #fff; background: rgba(0,0,0,0.55); padding: 10px 16px; border-radius: 10px; z-index: 3; border: 1px solid rgba(255,255,255,0.2); min-height: 40px; }
+  #cutscene .particles { position: absolute; inset: 0; pointer-events: none; }
+  .particle { position: absolute; width: 8px; height: 8px; border-radius: 50%; animation: floatUp 2.6s ease-out forwards; }
+  @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-320px) scale(0); opacity: 0; } }
+  .status-card { background: rgba(30,20,60,0.6); border: 1px solid rgba(169,135,255,0.35); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; font-size: 12px; line-height: 1.6; }
+  .status-card .sc-row { display: flex; justify-content: space-between; padding: 3px 0; }
+  .status-card .sc-row b { color: var(--gold); }
+  .status-card .sc-hint { font-size: 10.5px; opacity: 0.65; margin-top: 6px; }
+  .backup-slot { display: flex; align-items: center; gap: 10px; background: rgba(20,12,40,0.7); border: 1px solid rgba(140,110,255,0.25); border-radius: 10px; padding: 10px 12px; margin-bottom: 7px; }
+  .backup-slot .bs-info { flex: 1; min-width: 0; }
+  .backup-slot .bs-title { font-weight: 700; font-size: 12.5px; color: var(--gold); }
+  .backup-slot .bs-meta { font-size: 10.5px; opacity: 0.7; margin-top: 2px; }
+  .backup-slot .bs-actions { display: flex; gap: 5px; flex-shrink: 0; }
+  .backup-slot .bs-actions button { font-size: 11px; padding: 7px 10px; min-height: 34px; }
+</style>
+</head>
+<body>
+
+<div id="rotateWarning">
+  <div class="rot-icon"></div>
+  <div class="rot-title">Rotate your device</div>
+  <div class="rot-text">Aura Forge plays best in landscape. Please rotate your phone or tablet.</div>
+</div>
+
+<div id="game">
+  <div id="startScreen">
+    <span class="logo logo-1">Aura</span>
+    <span class="logo logo-2">Forge</span>
+    <div class="tagline">Roll rare auras. Brew potions. Master the elements.</div>
+    <button class="enter-btn" onclick="enterWorld()">Enter the World</button>
+    <div class="controls">
+      <div class="row desktop-only"><span class="keycap">W</span><span class="keycap">A</span><span class="keycap">S</span><span class="keycap">D</span><span>— Move</span></div>
+      <div class="row desktop-only"><span class="keycap">E</span><span>— Interact</span></div>
+      <div class="row desktop-only"><span class="keycap wide">SPACE</span><span>— Roll</span></div>
+      <div class="row" id="mobileHintRow" style="display:none"><span style="opacity:0.75">Joystick to walk. Tap ROLL to roll. Tap TALK near NPCs.</span></div>
+    </div>
+  </div>
+
+  <div id="restoreBanner">
+    <span id="restoreText">Save restored</span>
+    <div class="rb-detail" id="restoreDetail"></div>
+    <span class="rb-close" onclick="document.getElementById('restoreBanner').classList.remove('show')">✕</span>
+  </div>
+
+  <header>
+    <div class="stats">
+      <span class="stat">Coins <b id="coins">0</b></span>
+      <span class="stat">Luck <b id="luck">1.0x</b></span>
+      <span class="stat">CD <b id="cd">1.50s</b></span>
+      <span class="stat">Fortune <b id="fortune">1.00x</b></span>
+    </div>
+    <div class="biome-tag" id="biomeTag" style="--biome-color:#7a5aff"><span id="biomeName">Verdant Meadow</span><span class="timer" id="biomeTimer">5:00</span></div>
+    <div class="selena-tag" id="selenaTag"><span>✦ Selena</span><span class="timer" id="selenaTimerHeader">0:00</span></div>
+    <div class="name-tag" id="playerNameTag">Traveler</div>
+    <div class="aura-tag" id="equipped">Aura: None</div>
+    <button class="hud-btn" onclick="toggleSidebar()" id="toggleUiBtn">Hide UI</button>
+  </header>
+
+  <div id="main">
+    <div id="worldViewport">
+      <div id="world"></div>
+      <div id="biomeBanner"><div class="b-name" id="bannerName">Verdant Meadow</div><div class="b-desc" id="bannerDesc">Lush and peaceful.</div></div>
+      <div class="buffs-bar" id="buffsBar"></div>
+      <div id="hudBottom">
+        <div class="hud-pill desktop-only">WASD / Arrows — Walk</div>
+        <div class="hud-pill" id="npcHint" style="display:none">Press <b>E</b> to talk</div>
+      </div>
+      <div id="saveIndicator">✓ Saved</div>
+      <div id="mobileSidebarTab" onclick="toggleMobileSidebar()">▲ Menu</div>
+      <div id="mobileTopBar">
+        <button class="mini-btn" onclick="openInventory()">🎒<span class="badge" id="mobileInvBadge">0</span></button>
+        <button class="mini-btn" onclick="openSettings()">⚙️</button>
+      </div>
+      <div id="mobileControls">
+        <div id="joystick"><div id="joystickKnob"></div></div>
+        <div id="mobileActions">
+          <button class="action-btn menu-btn" onclick="openSettings()"><span class="icon">⚙️</span></button>
+          <button class="action-btn interact-btn" id="mobileInteractBtn" onclick="mobileInteract()"><span class="icon">💬</span><span class="label">TALK</span></button>
+          <button class="action-btn roll-btn" id="mobileRollBtn" onclick="mobileRoll()"><span class="icon">🎲</span><span class="label">ROLL</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
+    <div id="sidebar">
+      <button id="rollBtn" onclick="manualRoll()">Roll</button>
+      <div class="auto-panel">
+        <div class="auto-header"><span>Auto Roll</span><div class="auto-toggle" onclick="toggleAutoRoll()"><div class="switch" id="autoSwitch"></div></div></div>
+        <div class="auto-options">
+          <button data-mode="stop" onclick="setAutoMode('stop')">Stop on Rare+</button>
+          <button data-mode="fast" onclick="setAutoMode('fast')">Fast</button>
+          <button data-mode="best" onclick="setAutoMode('best')" class="active">Balanced</button>
+        </div>
+        <div class="auto-stat"><span>Auto: <b id="autoCount">0</b></span><span id="autoBest">Best: —</span></div>
+      </div>
+      <div class="roll-feed-wrap">
+        <div class="roll-feed-header"><span>Roll Feed</span><span class="count" id="feedCount">0 rolls</span></div>
+        <div id="rollFeed"></div>
+      </div>
+      <div class="side-actions">
+        <button onclick="openInventory()">Inventory <span class="badge" id="invBadge">0</span></button>
+        <button onclick="openIndex()">Aura Index</button>
+      </div>
+      <div class="side-actions" style="margin-top:-3px">
+        <button onclick="openSettings()">Settings</button>
+        <button onclick="openSellPanel()" style="background:linear-gradient(180deg,#8a6a20,#5a4510); border-color:rgba(255,215,110,0.5);">💰 Sell Auras</button>
+      </div>
+      <div class="save-panel">
+        <button onclick="saveGame(true)">Save</button>
+        <button onclick="exportSave()">Export</button>
+        <button onclick="importSavePrompt()">Import</button>
+      </div>
+      <div style="text-align:center; margin-top:-3px;">
+        <button onclick="openBackupManager()" style="width:100%; font-size:11px; padding:7px; background:rgba(30,60,40,0.5); border-color:rgba(120,255,180,0.3); margin-bottom:4px;">Backups &amp; Recovery</button>
+        <button onclick="confirmReset()" style="width:100%; font-size:11px; padding:7px; background:rgba(60,20,30,0.5); border-color:rgba(255,120,150,0.3);">Reset</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal"><div id="modalBox"></div></div>
+
+<div id="cutscene">
+  <div class="rays"></div>
+  <div class="cut-inner">
+    <div class="cut-icon" id="cutIcon">✦</div>
+    <div class="cut-name" id="cutName">AURA</div>
+    <div class="cut-rarity" id="cutRarity">RARE</div>
+    <div class="cut-chance" id="cutChance"></div>
+  </div>
+  <div class="particles" id="particles"></div>
+  <div class="cut-skip" onclick="skipCutscene()">Tap to continue</div>
+</div>
+
+<script>
+/* ============================================================
+   AURA FORGE — v11
+   Fixes vs v10:
+   - World viewport blank bug: camera now uses getBoundingClientRect,
+     re-runs periodically after load, and self-heals when out of bounds
+   - Storage overflow: backup/export trimmed, sold log capped at 20,
+     special auras excluded from backup (regenerated instead)
+   - NPC models now full-body chibi (head + arms + legs + outfit)
+============================================================ */
+
+// ============================================================
+// DEVICE DETECTION
+// ============================================================
+function isMobileDevice() {
+  if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') return navigator.userAgentData.mobile;
+  const ua = navigator.userAgent || '';
+  const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet|Silk/i;
+  const iPadOS13Plus = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
+  return mobileRegex.test(ua) || iPadOS13Plus;
+}
+function isTouchCapable() { return ('ontouchstart' in window) || navigator.maxTouchPoints > 0; }
+let deviceMode = 'auto';
+function effectiveIsMobile() {
+  if (deviceMode === 'mobile') return true;
+  if (deviceMode === 'desktop') return false;
+  return isMobileDevice();
+}
+const IS_TOUCH = isTouchCapable();
+let IS_MOBILE = effectiveIsMobile();
+
+function applyDeviceClass() {
+  IS_MOBILE = effectiveIsMobile();
+  document.body.classList.toggle('is-mobile-device', IS_MOBILE);
+  const mh = document.getElementById('mobileHintRow');
+  if (mh) mh.style.display = IS_MOBILE ? 'flex' : 'none';
+  const mb = document.getElementById('mobileSidebarTab');
+  const mtb = document.getElementById('mobileTopBar');
+  const mc = document.getElementById('mobileControls');
+  const show = IS_MOBILE && state.hasEntered;
+  if (mb) mb.classList.toggle('show', show);
+  if (mtb) mtb.classList.toggle('show', show);
+  if (mc) mc.classList.toggle('show', show);
+  requestAnimationFrame(() => requestAnimationFrame(() => updateCamera()));
+}
+
+function checkOrientation() {
+  const rw = document.getElementById('rotateWarning');
+  const isP = window.innerWidth <= 820 && window.innerHeight > window.innerWidth;
+  if (isP && IS_MOBILE) rw.classList.add('show'); else rw.classList.remove('show');
+}
+
+// ============================================================
+// VERSIONING
+// ============================================================
+const SAVE_SCHEMA_VERSION = 6;
+const SAVE_KEY = "aura-forge-save-v11";
+const BACKUP_KEY = "aura-forge-backup-v11";
+const VERSION_KEY = "aura-forge-schema-version";
+const BACKUP_INTERVAL = 3 * 60 * 1000;
+
+const MIGRATIONS = {
+  2: s => { if (!s.exclusiveGear) s.exclusiveGear = {}; if (!s.selenaExclusiveOwned) s.selenaExclusiveOwned = []; if (!s.selenaStock) s.selenaStock = []; if (!s.selenaVisitCount) s.selenaVisitCount = 0; if (!s.nextSelenaVisitAt) s.nextSelenaVisitAt = Date.now() + 60000; if (!s.selenaVisitStartedAt) s.selenaVisitStartedAt = 0; if (!s.lastSpecialAuraAt) s.lastSpecialAuraAt = Date.now(); if (!s.avatarShape) s.avatarShape = "doll"; return s; },
+  3: s => { if (!s.__save) s.__save = {}; if (!s.__save.createdAt) s.__save.createdAt = Date.now(); if (typeof s.sidebarHidden !== 'boolean') s.sidebarHidden = false; return s; },
+  4: s => { if (typeof s.totalSold !== 'number') s.totalSold = 0; if (typeof s.totalEarnedFromSales !== 'number') s.totalEarnedFromSales = 0; if (!Array.isArray(s.soldLog)) s.soldLog = []; return s; },
+  5: s => { if (!s.deviceMode) s.deviceMode = 'auto'; return s; },
+  6: s => { if (Array.isArray(s.soldLog) && s.soldLog.length > 20) s.soldLog = s.soldLog.slice(-20); return s; },
+};
+function migrateSave(save) {
+  let v = save.__save?.version || save.version || 1;
+  const mig = [];
+  while (v < SAVE_SCHEMA_VERSION) {
+    const nv = v + 1;
+    const fn = MIGRATIONS[nv];
+    if (typeof fn === 'function') { save = fn(save) || save; mig.push(`v${v}→v${nv}`); }
+    v = nv;
+  }
+  if (!save.__save) save.__save = {};
+  save.__save.version = SAVE_SCHEMA_VERSION;
+  return { save, migrated: mig };
+}
+function safeParseJSON(str) { try { return { ok: true, data: JSON.parse(str) }; } catch (e) { return { ok: false, error: e.message }; } }
+
+// ============================================================
+// CONFIG
+// ============================================================
+const BIOME_DURATION = 5 * 60 * 1000;
+const SPAWN_X = 1100, SPAWN_Y = 900;
+const DEFAULT_PLAYER_NAME = "Traveler";
+const SPECIAL_AURA_INTERVAL = 45 * 1000;
+const MAX_SPECIAL_AURAS = 40;
+const SELENA_VISIT_INTERVAL = 20 * 60 * 1000;
+const SELENA_VISIT_DURATION = 5 * 60 * 1000;
+const SELENA_DISCOUNT = 0.30;
+
+const BIOMES = {
+  meadow: { name: "Verdant Meadow", desc: "Lush and peaceful.", color: "#7ecb7e", bg: "radial-gradient(circle at 25% 20%, rgba(80,180,100,0.28) 0%, transparent 42%), radial-gradient(circle at 75% 70%, rgba(60,140,80,0.22) 0%, transparent 45%), linear-gradient(180deg, #183020, #0d1a10)", decor: "meadow" },
+  snowy: { name: "Frostbound Peaks", desc: "Frozen and crystalline.", color: "#8fe4ff", bg: "radial-gradient(circle at 25% 20%, rgba(150,200,255,0.28) 0%, transparent 42%), linear-gradient(180deg, #1a2840, #0a1220)", decor: "snowy" },
+  desert: { name: "Scorched Dunes", desc: "Endless golden sand.", color: "#ffb84d", bg: "radial-gradient(circle at 25% 20%, rgba(255,180,90,0.3) 0%, transparent 42%), linear-gradient(180deg, #3a2410, #1a1008)", decor: "desert" },
+  crimson: { name: "Crimson Hollow", desc: "Haunted by ancient malice.", color: "#ff5a5a", bg: "radial-gradient(circle at 25% 20%, rgba(220,60,80,0.3) 0%, transparent 42%), linear-gradient(180deg, #2a0a1a, #100408)", decor: "crimson" },
+  void: { name: "Void Rift", desc: "Reality unravels here.", color: "#a87aff", bg: "radial-gradient(circle at 25% 20%, rgba(150,90,255,0.32) 0%, transparent 42%), linear-gradient(180deg, #1a0a30, #080410)", decor: "void" },
+};
+const BIOME_ORDER = ["meadow", "snowy", "desert", "crimson", "void"];
+
+const BASE_AURAS = [
+  { name: "Pebble", chance: 4000, color: "#9d9d9d", rarity: "Common", value: 1, icon: "●", cutscene: false, ornament: { type: "circle", color: "#9d9d9d", size: 12, animate: "float" } },
+  { name: "Dew", chance: 3200, color: "#b8d8ff", rarity: "Common", value: 2, icon: "❍", cutscene: false, ornament: { type: "drop", color: "#b8d8ff", size: 14, animate: "float" } },
+  { name: "Leaf", chance: 2600, color: "#7ecb7e", rarity: "Common", value: 2, icon: "❦", cutscene: false, ornament: { type: "leaf", color: "#7ecb7e", size: 14, animate: "drift" } },
+  { name: "Dust", chance: 2200, color: "#d8c090", rarity: "Common", value: 3, icon: "◦", cutscene: false, ornament: { type: "circle", color: "#d8c090", size: 10, animate: "drift" } },
+  { name: "Petal", chance: 1900, color: "#ffd0e0", rarity: "Common", value: 3, icon: "✿", cutscene: false, ornament: { type: "blossom", color: "#ffd0e0", secondaryColor: "#ff9ecb", size: 15, animate: "drift" } },
+  { name: "Ember", chance: 1800, color: "#ff9a55", rarity: "Uncommon", value: 5, icon: "✦", cutscene: false, ornament: { type: "flame", color: "#ff9a55", secondaryColor: "#ffd76e", size: 16, animate: "pulse" } },
+  { name: "Salt Crystal", chance: 1600, color: "#e0f0ff", rarity: "Uncommon", value: 5, icon: "❖", cutscene: false, ornament: { type: "hex", color: "#e0f0ff", size: 13, animate: "spin" } },
+  { name: "Frost", chance: 1400, color: "#8fe4ff", rarity: "Uncommon", value: 6, icon: "❉", cutscene: false, ornament: { type: "crystal", color: "#8fe4ff", size: 16, animate: "spin" } },
+  { name: "Sprout", chance: 1100, color: "#9ee06a", rarity: "Uncommon", value: 7, icon: "✿", cutscene: false, ornament: { type: "leaf", color: "#9ee06a", size: 16, animate: "drift" } },
+  { name: "Moth Wing", chance: 900, color: "#d8c8b0", rarity: "Uncommon", value: 9, icon: "❦", cutscene: false, ornament: { type: "wing", color: "#d8c8b0", secondaryColor: "#8a6a4a", size: 15, animate: "drift" } },
+  { name: "Sapphire", chance: 700, color: "#5a9bff", rarity: "Rare", value: 15, icon: "❖", cutscene: false, ornament: { type: "crystal", color: "#5a9bff", size: 18, animate: "spin" } },
+  { name: "Amethyst", chance: 500, color: "#b96eff", rarity: "Rare", value: 20, icon: "✧", cutscene: false, ornament: { type: "crystal", color: "#b96eff", size: 18, animate: "spin" } },
+  { name: "Rosewind", chance: 380, color: "#ff9ecb", rarity: "Rare", value: 28, icon: "❀", cutscene: false, ornament: { type: "star", color: "#ff9ecb", size: 18, animate: "spin" } },
+  { name: "Opaline", chance: 300, color: "#b8f0e0", rarity: "Rare", value: 34, icon: "◇", cutscene: false, ornament: { type: "shard", color: "#b8f0e0", size: 18, animate: "spin" } },
+  { name: "Songbell", chance: 620, color: "#ffd8f0", rarity: "Rare", value: 16, icon: "♪", cutscene: false, ornament: { type: "bell", color: "#ffd8f0", secondaryColor: "#d878a8", size: 18, animate: "sway" } },
+  { name: "Sunflare", chance: 220, color: "#ffcc4d", rarity: "Legendary", value: 70, icon: "☀", cutscene: true, ornament: { type: "sun", color: "#ffcc4d", secondaryColor: "#ff8844", size: 22, animate: "spin" } },
+  { name: "Moonveil", chance: 150, color: "#b0c8ff", rarity: "Legendary", value: 95, icon: "☾", cutscene: true, ornament: { type: "moon", color: "#b0c8ff", size: 22, animate: "pulse" } },
+  { name: "Wyrm Eye", chance: 100, color: "#e8a030", rarity: "Legendary", value: 130, icon: "◉", cutscene: true, ornament: { type: "eye", color: "#e8a030", secondaryColor: "#5a2a10", size: 22, animate: "track" } },
+  { name: "Stormcaller", chance: 90, color: "#7fd4ff", rarity: "Legendary", value: 145, icon: "⚡", cutscene: true, ornament: { type: "storm", color: "#7fd4ff", secondaryColor: "#ffffff", size: 22, animate: "pulse" } },
+  { name: "Sylph Crown", chance: 60, color: "#a8ffd8", rarity: "Legendary", value: 180, icon: "♛", cutscene: true, ornament: { type: "crown", color: "#a8ffd8", secondaryColor: "#3a9a6a", size: 24, animate: "float" } },
+  { name: "Phoenix", chance: 40, color: "#ff6a3a", rarity: "Mythic", value: 260, icon: "✺", cutscene: true, ornament: { type: "wing", color: "#ff6a3a", secondaryColor: "#ffd76e", size: 26, animate: "pulse" } },
+  { name: "Seraph", chance: 25, color: "#fff2b0", rarity: "Mythic", value: 400, icon: "✟", cutscene: true, ornament: { type: "wing", color: "#fff2b0", secondaryColor: "#ffd76e", size: 26, animate: "float" } },
+  { name: "Leviathan", chance: 15, color: "#3a8a9a", rarity: "Mythic", value: 550, icon: "≈", cutscene: true, ornament: { type: "chain", color: "#3a8a9a", secondaryColor: "#1a4a5a", size: 26, animate: "spin" } },
+  { name: "Wraithking", chance: 10, color: "#7a8ac0", rarity: "Mythic", value: 750, icon: "♛", cutscene: true, ornament: { type: "crown", color: "#7a8ac0", secondaryColor: "#3a3a6a", size: 27, animate: "pulse" } },
+  { name: "Divinity", chance: 8, color: "#ffe066", rarity: "Divine", value: 1400, icon: "☩", cutscene: true, ornament: { type: "ring", color: "#ffe066", secondaryColor: "#ffd76e", size: 30, animate: "spin" } },
+  { name: "Chrono Core", chance: 5, color: "#a8f8ff", rarity: "Divine", value: 2200, icon: "⧗", cutscene: true, ornament: { type: "hourglass", color: "#a8f8ff", secondaryColor: "#3a88a8", size: 30, animate: "flip" } },
+  { name: "Celestial", chance: 3, color: "#7ef9ff", rarity: "Divine", value: 3500, icon: "✵", cutscene: true, ornament: { type: "star", color: "#7ef9ff", secondaryColor: "#ffffff", size: 30, animate: "spin" } },
+  { name: "Void", chance: 1, color: "#7a3aff", rarity: "Void", value: 12000, icon: "◉", cutscene: true, ornament: { type: "void", color: "#7a3aff", secondaryColor: "#c8a0ff", size: 32, animate: "spin" } },
+  { name: "Riftheart", chance: 0.6, color: "#ff60d0", rarity: "Void", value: 20000, icon: "♥", cutscene: true, ornament: { type: "rift", color: "#ff60d0", secondaryColor: "#7a10a0", size: 33, animate: "pulse" } },
+  { name: "Genesis", chance: 0.3, color: "#ff5ec8", rarity: "Void", value: 30000, icon: "✹", cutscene: true, ornament: { type: "rune", color: "#ff5ec8", secondaryColor: "#ffd76e", size: 34, animate: "spin" } },
+];
+const BIOME_AURAS = [
+  { name: "Frostbite", chance: 400, color: "#a0e8ff", rarity: "Rare", value: 40, icon: "❆", cutscene: false, biome: "snowy", ornament: { type: "crystal", color: "#a0e8ff", size: 16, animate: "spin" } },
+  { name: "Glacier", chance: 120, color: "#c8f0ff", rarity: "Legendary", value: 180, icon: "◈", cutscene: true, biome: "snowy", ornament: { type: "crystal", color: "#c8f0ff", secondaryColor: "#7fd4ff", size: 24, animate: "spin" } },
+  { name: "Aurora", chance: 30, color: "#b0ffd8", rarity: "Mythic", value: 500, icon: "❈", cutscene: true, biome: "snowy", ornament: { type: "wing", color: "#b0ffd8", secondaryColor: "#ff9ecb", size: 28, animate: "float" } },
+  { name: "Eternal Winter", chance: 3, color: "#e0f8ff", rarity: "Divine", value: 5000, icon: "✻", cutscene: true, biome: "snowy", ornament: { type: "rune", color: "#e0f8ff", secondaryColor: "#8fe4ff", size: 32, animate: "spin" } },
+  { name: "Sunstone", chance: 400, color: "#ffd070", rarity: "Rare", value: 40, icon: "◐", cutscene: false, biome: "desert", ornament: { type: "sun", color: "#ffd070", size: 16, animate: "spin" } },
+  { name: "Mirage", chance: 120, color: "#f0c090", rarity: "Legendary", value: 180, icon: "◑", cutscene: true, biome: "desert", ornament: { type: "mirror", color: "#f0c090", secondaryColor: "#ffb84d", size: 24, animate: "track" } },
+  { name: "Scorched", chance: 30, color: "#ff8844", rarity: "Mythic", value: 500, icon: "◒", cutscene: true, biome: "desert", ornament: { type: "flame", color: "#ff8844", secondaryColor: "#ffd76e", size: 28, animate: "pulse" } },
+  { name: "Solar Flare", chance: 3, color: "#ffe8a0", rarity: "Divine", value: 5000, icon: "◓", cutscene: true, biome: "desert", ornament: { type: "sun", color: "#ffe8a0", secondaryColor: "#ff8844", size: 32, animate: "spin" } },
+  { name: "Bloodmoon", chance: 400, color: "#ff4a6a", rarity: "Rare", value: 40, icon: "☽", cutscene: false, biome: "crimson", ornament: { type: "moon", color: "#ff4a6a", size: 16, animate: "pulse" } },
+  { name: "Crimson Eye", chance: 120, color: "#ff2a4a", rarity: "Legendary", value: 180, icon: "◎", cutscene: true, biome: "crimson", ornament: { type: "eye", color: "#ff2a4a", secondaryColor: "#ffe066", size: 24, animate: "track" } },
+  { name: "Wraith", chance: 30, color: "#a82040", rarity: "Mythic", value: 500, icon: "☠", cutscene: true, biome: "crimson", ornament: { type: "skull", color: "#a82040", secondaryColor: "#ff4a6a", size: 28, animate: "float" } },
+  { name: "Hemogoblin", chance: 3, color: "#c01030", rarity: "Divine", value: 5000, icon: "✟", cutscene: true, biome: "crimson", ornament: { type: "rune", color: "#c01030", secondaryColor: "#ff2a4a", size: 32, animate: "spin" } },
+  { name: "Nullshard", chance: 400, color: "#a87aff", rarity: "Rare", value: 40, icon: "◇", cutscene: false, biome: "void", ornament: { type: "shard", color: "#a87aff", size: 16, animate: "spin" } },
+  { name: "Riftwalker", chance: 120, color: "#b090ff", rarity: "Legendary", value: 180, icon: "◈", cutscene: true, biome: "void", ornament: { type: "void", color: "#b090ff", secondaryColor: "#7a3aff", size: 24, animate: "spin" } },
+  { name: "Entropy", chance: 30, color: "#8050ff", rarity: "Mythic", value: 500, icon: "❖", cutscene: true, biome: "void", ornament: { type: "rift", color: "#8050ff", secondaryColor: "#c8a0ff", size: 28, animate: "pulse" } },
+  { name: "The End", chance: 3, color: "#d0a0ff", rarity: "Divine", value: 5000, icon: "✵", cutscene: true, biome: "void", ornament: { type: "rune", color: "#d0a0ff", secondaryColor: "#7a3aff", size: 32, animate: "spin" } },
+];
+const SELENA_EXCLUSIVE_AURAS = [
+  { name: "Wayfarer's Light", color: "#78ffdc", rarity: "Mythic", value: 800, icon: "✦", cutscene: true, isExclusive: true, ornament: { type: "wing", color: "#78ffdc", secondaryColor: "#c8a0ff", size: 26, animate: "float" } },
+  { name: "Merchant's Boon", color: "#ffd76e", rarity: "Legendary", value: 350, icon: "☀", cutscene: true, isExclusive: true, ornament: { type: "sun", color: "#ffd76e", secondaryColor: "#ff9ecb", size: 24, animate: "spin" } },
+  { name: "Distant Star", color: "#c8a0ff", rarity: "Divine", value: 2200, icon: "✵", cutscene: true, isExclusive: true, ornament: { type: "star", color: "#c8a0ff", secondaryColor: "#78ffdc", size: 30, animate: "spin" } },
+];
+
+const SELL_PRICES = { Common: 5, Uncommon: 15, Rare: 45, Legendary: 140, Mythic: 400, Divine: 1400, Void: 5000 };
+function getSellPrice(a) { if (!a) return 1; if (a.isSpecial) return Math.max(10, Math.floor(a.value * 0.35)); return SELL_PRICES[a.rarity] || 5; }
+
+// Special aura generator
+const SPECIAL_PREFIXES = ["Ethereal","Ancient","Prismatic","Eclipsed","Astral","Lunar","Solar","Spectral","Sacred","Cursed","Blessed","Forgotten","Radiant","Obsidian","Ivory","Fractured","Boundless","Eternal","Fleeting","Woven","Silent","Howling","Frozen","Molten","Verdant","Drowned","Sundered","Hallowed","Withered","Kindled","Shattered","Drifting","Hollowed","Crowned"];
+const SPECIAL_SUFFIXES = ["Halo","Requiem","Cascade","Vortex","Sigil","Ember","Whisper","Thorn","Bloom","Warden","Chorus","Echo","Veil","Crown","Pulse","Shard","Weave","Fracture","Tide","Spark","Mantle","Prism","Lament","Vow","Rite","Dream","Wish","Ash","Song","Knell","Cycle","Dawn","Dusk"];
+const SPECIAL_RARITIES = ["Rare","Legendary","Mythic","Divine","Void"];
+const RARITY_META = {
+  Common: { minChance: 1200, maxChance: 4000, valueBase: 1, valueStep: 2, cutscene: false },
+  Uncommon: { minChance: 600, maxChance: 1500, valueBase: 5, valueStep: 4, cutscene: false },
+  Rare: { minChance: 180, maxChance: 600, valueBase: 20, valueStep: 15, cutscene: false },
+  Legendary: { minChance: 40, maxChance: 180, valueBase: 80, valueStep: 40, cutscene: true },
+  Mythic: { minChance: 10, maxChance: 40, valueBase: 300, valueStep: 120, cutscene: true },
+  Divine: { minChance: 2, maxChance: 10, valueBase: 1500, valueStep: 800, cutscene: true },
+  Void: { minChance: 0.3, maxChance: 2, valueBase: 8000, valueStep: 4000, cutscene: true },
+};
+const ORNAMENT_TYPES = ["circle","drop","leaf","flame","crystal","shard","star","sun","moon","storm","wing","skull","eye","ring","void","rune","blossom","hex","chain","mirror","bell","hourglass","mask","arrow","crown","gear","branch","rift"];
+const ANIMATION_TYPES = ["spin","pulse","float","drift","sway","track","flip"];
+function hslToHex(h, s, l) { s /= 100; l /= 100; const k = n => (n + h / 30) % 12; const a = s * Math.min(l, 1 - l); const f = n => { const c = l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); return Math.round(255 * c).toString(16).padStart(2, '0'); }; return '#' + f(0) + f(8) + f(4); }
+function randomChoice(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function getHueFromHex(hex) { const c = hex.replace('#', ''); const num = parseInt(c, 16); const r = (num >> 16) / 255, g = (num >> 8 & 0xff) / 255, b = (num & 0xff) / 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let h = 0; if (mx === mn) h = 0; else if (mx === r) h = 60 * (((g - b) / (mx - mn)) % 6); else if (mx === g) h = 60 * (((b - r) / (mx - mn)) + 2); else h = 60 * (((r - g) / (mx - mn)) + 4); return (h + 360) % 360; }
+function generateSpecialAura(names, hues, ornUsed) {
+  names = names || []; hues = hues || []; ornUsed = ornUsed || [];
+  const rarity = randomChoice(SPECIAL_RARITIES); const meta = RARITY_META[rarity];
+  let name, tries = 0;
+  do { name = randomChoice(SPECIAL_PREFIXES) + " " + randomChoice(SPECIAL_SUFFIXES); tries++; } while (names.includes(name) && tries < 200);
+  if (names.includes(name)) name += " " + String(Math.floor(Math.random() * 9999)).padStart(4, '0');
+  const chance = +(meta.minChance + Math.random() * (meta.maxChance - meta.minChance)).toFixed(2);
+  const value = Math.round(meta.valueBase + (meta.maxChance - chance) * meta.valueStep);
+  const biasMap = { Void: 275, Divine: 50, Mythic: 0, Legendary: 200, Rare: 320 };
+  const bias = biasMap[rarity];
+  let hue, hT = 0;
+  do { const j = (Math.random() - 0.5) * 90; hue = (bias + j + 360) % 360; hT++; const c = hues.some(h => Math.min(Math.abs(h - hue), 360 - Math.abs(h - hue)) < 22); if (!c) break; } while (hT < 80);
+  const color = hslToHex(hue, 62 + Math.random() * 30, 48 + Math.random() * 22);
+  const iconPool = rarity === "Void" ? ["✹","◉","❂","✺","❋","Ω","♥"] : rarity === "Divine" ? ["✵","☩","✟","❈","✦","♛"] : rarity === "Mythic" ? ["✺","❋","❂","❉","✧","☠","☀"] : rarity === "Legendary" ? ["☀","☾","⚡","❧","✧","†"] : ["◈","◇","◆","❖","✧","❀","❉","♪","⧗"];
+  const icon = randomChoice(iconPool);
+  let oT, oTr = 0;
+  do { oT = randomChoice(ORNAMENT_TYPES); oTr++; const c = ornUsed.some(o => { if (o.type !== oT) return false; const d = Math.min(Math.abs(o.hue - hue), 360 - Math.abs(o.hue - hue)); return d < 25; }); if (!c) break; } while (oTr < 40);
+  const oA = randomChoice(ANIMATION_TYPES);
+  const sz = rarity === "Void" ? 32 : rarity === "Divine" ? 30 : rarity === "Mythic" ? 28 : rarity === "Legendary" ? 24 : 18;
+  const sHue = (hue + 25 + Math.random() * 40) % 360;
+  const sColor = hslToHex(sHue, 68 + Math.random() * 25, 50 + Math.random() * 20);
+  return { name, chance, color, rarity, value, icon, cutscene: meta.cutscene, isSpecial: true, createdAt: Date.now(), ornament: { type: oT, color, secondaryColor: sColor, size: sz, animate: oA } };
+}
+function generateSpecialAurasForSave(count, existingNames) { const g = []; for (let i = 0; i < count; i++) { const n = [...existingNames, ...g.map(x => x.name)]; const h = g.map(x => getHueFromHex(x.color)); const o = g.map(x => ({ type: x.ornament.type, hue: getHueFromHex(x.color) })); g.push(generateSpecialAura(n, h, o)); } return g; }
+function regenerateActiveSpecials() { const ex = state.specialAuras || []; if (ex.length === 0) return; const r = []; for (const o of ex) { const n = r.map(x => x.name); const h = r.map(x => getHueFromHex(x.color)); const or = r.map(x => ({ type: x.ornament.type, hue: getHueFromHex(x.color) })); const nc = n.includes(o.name); const hc = h.some(hv => Math.min(Math.abs(hv - getHueFromHex(o.color)), 360 - Math.abs(hv - getHueFromHex(o.color))) < 22); const oc = or.some(ov => ov.type === o.ornament.type && Math.min(Math.abs(ov.hue - getHueFromHex(o.color)), 360 - Math.abs(ov.hue - getHueFromHex(o.color))) < 25); if (!nc && !hc && !oc) r.push(o); else { const f = generateSpecialAura(n, h, or); f.createdAt = o.createdAt; r.push(f); } } state.specialAuras = r; }
+
+const POTIONS = {
+  luck: { label: "Luck Potion", color: "#6ecb6e", cost: 150, craftFrom: "Leaf", effect: "+0.5x luck" },
+  speed: { label: "Speed Potion", color: "#7fd4ff", cost: 200, craftFrom: "Frost", effect: "-15% cooldown" },
+  fortune: { label: "Fortune Potion", color: "#ffd76e", cost: 350, craftFrom: "Sapphire", effect: "+25% coins" },
+  megaLuck: { label: "Mega Luck Potion", color: "#ff9ecb", cost: 600, craftFrom: "Amethyst", effect: "+1.5x luck" },
+  swift: { label: "Swift Potion", color: "#b0ffd8", cost: 500, craftFrom: "Ember", effect: "-10% CD, +10% coins" },
+  golden: { label: "Golden Potion", color: "#ffb84d", cost: 800, craftFrom: "Sunflare", effect: "+50% coins" },
+  prismatic: { label: "Prismatic Potion", color: "#c8a0ff", cost: 1200, craftFrom: "Opaline", effect: "+2x luck, -20% CD" },
+  voidTonic: { label: "Void Tonic", color: "#7a3aff", cost: 2500, craftFrom: "Abyssal", effect: "+3x luck, +50% coins" },
+};
+const GEAR = {
+  luck: { label: "Luck Gear", color: "#6ecb6e", baseCost: 300, effect: "+0.25x luck/lvl", maxLevel: 20 },
+  speed: { label: "Speed Gear", color: "#7fd4ff", baseCost: 300, effect: "-10% CD/lvl", maxLevel: 15 },
+  fortune: { label: "Fortune Gear", color: "#ffd76e", baseCost: 500, effect: "+10% coins/lvl", maxLevel: 20 },
+  crit: { label: "Critical Gear", color: "#ff8ab6", baseCost: 700, effect: "+3% double chance", maxLevel: 10 },
+  multi: { label: "Multi-Roll Gear", color: "#ff6a3a", baseCost: 1000, effect: "+5% triple chance", maxLevel: 8 },
+  wisdom: { label: "Wisdom Gear", color: "#a987ff", baseCost: 900, effect: "+2% rarity boost", maxLevel: 10 },
+};
+
+const DEFAULT_STATE = {
+  coins: 0, baseLuck: 1.0, baseCooldown: 1500, inventory: [], equipped: null,
+  playerName: DEFAULT_PLAYER_NAME, avatarShape: "doll",
+  gearLuck: 0, gearSpeed: 0, gearFortune: 0, gearCrit: 0, gearMulti: 0, gearWisdom: 0,
+  potions: { luckCount: 0, speedCount: 0, fortuneCount: 0, megaLuckCount: 0, swiftCount: 0, goldenCount: 0, prismaticCount: 0, voidTonicCount: 0 },
+  questCooldown: 0, questsCompleted: 0, totalRolls: 0,
+  totalSold: 0, totalEarnedFromSales: 0, soldLog: [],
+  playerX: SPAWN_X, playerY: SPAWN_Y,
+  discovered: [], autoRoll: false, autoMode: "best", autoCount: 0, autoBest: null,
+  biomeIndex: 0, biomeStartedAt: Date.now(), avatarColor: "#9b6bff",
+  cutsceneRarities: { Common: false, Uncommon: false, Rare: false, Legendary: true, Mythic: true, Divine: true, Void: true },
+  cutsceneSpeed: 1.0, hasEntered: false, sidebarHidden: false,
+  specialAuras: [], lastSpecialAuraAt: 0,
+  nextSelenaVisitAt: 0, selenaVisitStartedAt: 0, selenaStock: [], selenaVisitCount: 0, selenaExclusiveOwned: [],
+  exclusiveGear: {}, deviceMode: 'auto',
+  __save: { version: SAVE_SCHEMA_VERSION, createdAt: Date.now() },
+  version: SAVE_SCHEMA_VERSION,
+};
+
+let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+let saveTimeout = null, backupTimeout = null, lastSaveAt = 0;
+let ALL_AURAS = [];
+
+function rebuildAuraPool() { ALL_AURAS = [...BASE_AURAS, ...BIOME_AURAS, ...SELENA_EXCLUSIVE_AURAS, ...(state.specialAuras || [])]; ALL_AURAS.forEach(a => { if (!a.weight) a.weight = a.chance; }); }
+function getRollPool() { const bk = currentBiomeKey(); const bp = BIOME_AURAS.filter(a => a.biome === bk); return [...BASE_AURAS, ...bp, ...(state.specialAuras || [])]; }
+function findAuraByName(n) { return ALL_AURAS.find(a => a.name === n) || (state.specialAuras || []).find(a => a.name === n); }
+
+// ============================================================
+// SAVE / LOAD with TRIMMED payloads
+// ============================================================
+function sanitizeLoadedState() {
+  state.canRoll = true; state.inCutscene = false;
+  state.biomeIndex = state.biomeIndex % BIOME_ORDER.length;
+  if (!state.playerName || typeof state.playerName !== 'string') state.playerName = DEFAULT_PLAYER_NAME;
+  state.playerName = state.playerName.slice(0, 20);
+  if (!state.specialAuras) state.specialAuras = [];
+  if (!state.avatarShape) state.avatarShape = "doll";
+  if (!state.lastSpecialAuraAt) state.lastSpecialAuraAt = Date.now();
+  if (typeof state.sidebarHidden !== 'boolean') state.sidebarHidden = false;
+  if (!state.selenaStock) state.selenaStock = [];
+  if (!state.selenaExclusiveOwned) state.selenaExclusiveOwned = [];
+  if (!state.nextSelenaVisitAt) state.nextSelenaVisitAt = Date.now() + 60000;
+  if (!state.selenaVisitStartedAt) state.selenaVisitStartedAt = 0;
+  if (!state.selenaVisitCount) state.selenaVisitCount = 0;
+  if (!state.exclusiveGear || typeof state.exclusiveGear !== 'object') state.exclusiveGear = {};
+  if (typeof state.totalSold !== 'number') state.totalSold = 0;
+  if (typeof state.totalEarnedFromSales !== 'number') state.totalEarnedFromSales = 0;
+  if (!Array.isArray(state.soldLog)) state.soldLog = [];
+  if (state.soldLog.length > 20) state.soldLog = state.soldLog.slice(-20);
+  if (!state.deviceMode) state.deviceMode = 'auto';
+}
+
+// Trimmed snapshot — this is the KEY fix for the storage overflow error
+function buildSnapshot(forBackup) {
+  const s = JSON.parse(JSON.stringify(state));
+  delete s.canRoll; delete s.inCutscene; delete s._selenaWarned;
+  // Cap inventory at 200 entries (rarely exceeded but safe)
+  if (s.inventory.length > 200) {
+    const counts = {};
+    s.inventory.forEach(n => counts[n] = (counts[n] || 0) + 1);
+    const trimmed = [];
+    Object.entries(counts).forEach(([n, c]) => { for (let i = 0; i < Math.min(c, 20); i++) trimmed.push(n); });
+    s.inventory = trimmed.slice(0, 200);
+  }
+  // Cap sold log
+  if (s.soldLog.length > 20) s.soldLog = s.soldLog.slice(-20);
+  // Backup specifically excludes specialAuras — regenerate on load
+  if (forBackup) {
+    s.specialAuras = [];
+  }
+  // Cap discovered list to known auras only
+  if (s.discovered.length > 300) s.discovered = s.discovered.slice(-300);
+  if (!s.__save) s.__save = {};
+  s.__save.version = SAVE_SCHEMA_VERSION;
+  s.__save.savedAt = Date.now();
+  return s;
+}
+function writeSaveToLocalStorage(snap) {
+  updateSaveIndicator(true);
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(snap));
+    localStorage.setItem(VERSION_KEY, String(SAVE_SCHEMA_VERSION));
+    lastSaveAt = Date.now();
+    return { ok: true };
+  } catch (e) {
+    console.warn('Save failed:', e.message);
+    return { ok: false, error: e.message };
+  }
+}
+let saveFailureShown = false;
+function saveGame(showToast) {
+  const res = writeSaveToLocalStorage(buildSnapshot(false));
+  if (res.ok) { updateSaveIndicator(false, true); saveFailureShown = false; }
+  else if (!saveFailureShown) { saveFailureShown = true; addFeedSystem('⚠️ Storage full. Old backups cleared to make room.'); try { localStorage.removeItem(BACKUP_KEY); localStorage.removeItem(BACKUP_KEY + '-at'); localStorage.removeItem(SAVE_KEY + '-pre-restore'); } catch {} saveGame(false); }
+}
+function scheduleSave() { clearTimeout(saveTimeout); saveTimeout = setTimeout(() => saveGame(false), 500); }
+function writeBackupSnapshot(reason) {
+  try {
+    const s = buildSnapshot(true);
+    s.__save.backupReason = reason || 'auto';
+    s.__save.backupAt = Date.now();
+    localStorage.setItem(BACKUP_KEY, JSON.stringify(s));
+    localStorage.setItem(BACKUP_KEY + '-at', String(Date.now()));
+    return true;
+  } catch (e) { console.warn('Backup failed:', e.message); return false; }
+}
+function scheduleBackupLoop() { if (backupTimeout) clearInterval(backupTimeout); backupTimeout = setInterval(() => { if (state.hasEntered && state.totalRolls > 0) writeBackupSnapshot('interval'); }, BACKUP_INTERVAL); }
+function loadGameWithFallback() {
+  const result = { loaded: false, source: 'fresh', migrated: [], recovered: false, error: null };
+  function tryLoad(key) { const raw = localStorage.getItem(key); if (!raw) return { found: false }; const p = safeParseJSON(raw); if (!p.ok) return { found: true, ok: false, error: p.error }; const s = p.data; if (!s || typeof s !== 'object') return { found: true, ok: false, error: 'Invalid' }; const { save, migrated } = migrateSave(s); return { found: true, ok: true, save, migrations: migrated }; }
+  const pri = tryLoad(SAVE_KEY);
+  if (pri.found && pri.ok) {
+    state = { ...DEFAULT_STATE, ...pri.save };
+    state.__save = pri.save.__save || state.__save;
+    state.potions = { ...DEFAULT_STATE.potions, ...(pri.save.potions || {}) };
+    state.cutsceneRarities = { ...DEFAULT_STATE.cutsceneRarities, ...(pri.save.cutsceneRarities || {}) };
+    if (!Array.isArray(state.inventory)) state.inventory = [];
+    if (!Array.isArray(state.discovered)) state.discovered = [];
+    if (!Array.isArray(state.specialAuras)) state.specialAuras = [];
+    sanitizeLoadedState(); rebuildAuraPool();
+    result.loaded = true; result.source = 'primary'; result.migrated = pri.migrations || [];
+    return result;
+  }
+  const bk = tryLoad(BACKUP_KEY);
+  if (bk.found && bk.ok) {
+    state = { ...DEFAULT_STATE, ...bk.save };
+    state.__save = bk.save.__save || state.__save;
+    state.potions = { ...DEFAULT_STATE.potions, ...(bk.save.potions || {}) };
+    state.cutsceneRarities = { ...DEFAULT_STATE.cutsceneRarities, ...(bk.save.cutsceneRarities || {}) };
+    if (!Array.isArray(state.inventory)) state.inventory = [];
+    if (!Array.isArray(state.discovered)) state.discovered = [];
+    if (!Array.isArray(state.specialAuras)) state.specialAuras = [];
+    sanitizeLoadedState(); rebuildAuraPool();
+    result.loaded = true; result.source = 'backup'; result.recovered = true; result.migrated = bk.migrations || [];
+    return result;
+  }
+  state = JSON.parse(JSON.stringify(DEFAULT_STATE)); rebuildAuraPool();
+  result.source = 'fresh'; result.error = pri.error || bk.error || null;
+  return result;
+}
+function exportSave() { try { const s = buildSnapshot(false); s.__save.exportedAt = Date.now(); const json = JSON.stringify(s); const enc = btoa(unescape(encodeURIComponent(json))); const fn = `aura-forge-save-${new Date().toISOString().slice(0, 10)}.txt`; const blob = new Blob([enc], { type: 'text/plain' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = fn; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 1000); addFeedSpecial(`💾 Exported as <b>${fn}</b>`); } catch (e) { addFeedSystem('Export failed.'); } }
+function importSavePrompt() { openModal(`<h2>Import Save</h2><p>Paste your exported save below.</p><textarea id="importText" style="width:100%;height:140px;font-family:monospace;font-size:11px;background:rgba(20,12,40,0.85);color:#ece7ff;border:1.5px solid rgba(169,135,255,0.4);border-radius:10px;padding:10px;outline:none;resize:vertical;"></textarea><button class="modal-btn" onclick="doImport()" style="margin-top:10px;">Import &amp; Overwrite</button><button class="modal-btn" onclick="importSaveFromFile()" style="background:linear-gradient(180deg,#3a5a8a,#1a2a5a);">Load from File...</button><button class="modal-btn close-btn" onclick="closeModal()">Cancel</button>`); }
+function importSaveFromFile() { const input = document.createElement('input'); input.type = 'file'; input.accept = '.txt,.json,text/plain'; input.onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => { const el = document.getElementById('importText'); if (el) el.value = ev.target.result.trim(); addFeedSystem('File loaded — click Import.'); }; r.readAsText(f); }; input.click(); }
+function doImport() { const el = document.getElementById('importText'); if (!el) return; const raw = el.value.trim(); if (!raw) return; try { let json; try { json = decodeURIComponent(escape(atob(raw))); } catch { json = raw; } const p = JSON.parse(json); if (!p || typeof p !== 'object') throw new Error('Invalid'); try { localStorage.removeItem(BACKUP_KEY); } catch {} writeBackupSnapshot('pre-import'); const { save: mig, migrated: list } = migrateSave(p); state = { ...JSON.parse(JSON.stringify(DEFAULT_STATE)), ...mig }; state.potions = { ...DEFAULT_STATE.potions, ...(mig.potions || {}) }; state.cutsceneRarities = { ...DEFAULT_STATE.cutsceneRarities, ...(mig.cutsceneRarities || {}) }; if (!Array.isArray(state.inventory)) state.inventory = []; if (!Array.isArray(state.discovered)) state.discovered = []; if (!Array.isArray(state.specialAuras)) state.specialAuras = []; sanitizeLoadedState(); if (state.specialAuras.length === 0) state.specialAuras = generateSpecialAurasForSave(10, []); rebuildAuraPool(); player.x = state.playerX ?? SPAWN_X; player.y = state.playerY ?? SPAWN_Y; updatePlayerPos(); applyDeviceClass(); updateHUD(); renderBiome(); closeModal(); saveGame(true); addFeedSpecial('✓ Imported!'); if (list.length) addFeedSystem(`Migrated: ${list.join(', ')}`); } catch (e) { addFeedSystem('Import failed.'); } }
+function openBackupManager() {
+  const hasP = !!localStorage.getItem(SAVE_KEY); const hasB = !!localStorage.getItem(BACKUP_KEY);
+  const bAt = localStorage.getItem(BACKUP_KEY + '-at'); const bAge = bAt ? timeAgo(parseInt(bAt)) : '—';
+  let pm = 'Empty'; if (hasP) { const p = safeParseJSON(localStorage.getItem(SAVE_KEY)); if (p.ok) pm = `${(p.data.coins ?? 0).toLocaleString()}🪙 · ${p.data.totalRolls ?? 0} rolls`; else pm = '⚠️ Corrupt'; }
+  let bm = 'Empty'; if (hasB) { const p = safeParseJSON(localStorage.getItem(BACKUP_KEY)); if (p.ok) bm = `${(p.data.coins ?? 0).toLocaleString()}🪙 · ${bAge}`; else bm = '⚠️ Corrupt'; }
+  openModal(`<h2>Backups &amp; Recovery</h2><div class="status-card"><div class="sc-row"><span>Schema</span><b>v${SAVE_SCHEMA_VERSION}</b></div><div class="sc-row"><span>Last save</span><b>${lastSaveAt ? timeAgo(lastSaveAt) : '—'}</b></div><div class="sc-hint">Older saves migrate automatically.</div></div><div class="backup-slot ${hasP ? '' : 'empty'}"><div class="bs-info"><div class="bs-title">💾 Primary</div><div class="bs-meta">${pm}</div></div><div class="bs-actions"><button onclick="forceSaveAndRefresh()">Save Now</button></div></div><div class="backup-slot ${hasB ? '' : 'empty'}"><div class="bs-info"><div class="bs-title">🛡️ Backup</div><div class="bs-meta">${bm}</div></div><div class="bs-actions"><button onclick="snapshotNow()">Snapshot</button><button onclick="restoreFromBackup()" ${hasB ? '' : 'disabled'}>Restore</button></div></div><div class="backup-slot"><div class="bs-info"><div class="bs-title">📤 External</div><div class="bs-meta">Export or import a save file.</div></div><div class="bs-actions"><button onclick="exportSave()">Export</button><button onclick="closeModal(); importSavePrompt();">Import</button></div></div><button class="modal-btn close-btn" onclick="closeModal()">Close</button>`);
+}
+function forceSaveAndRefresh() { saveGame(true); setTimeout(openBackupManager, 300); }
+function snapshotNow() { if (writeBackupSnapshot('manual')) { addFeedSystem('🛡️ Snapshot created.'); setTimeout(openBackupManager, 300); } }
+function restoreFromBackup() { const raw = localStorage.getItem(BACKUP_KEY); if (!raw) return; const p = safeParseJSON(raw); if (!p.ok) return; const { save: mig } = migrateSave(p.data); state = { ...JSON.parse(JSON.stringify(DEFAULT_STATE)), ...mig }; state.potions = { ...DEFAULT_STATE.potions, ...(mig.potions || {}) }; state.cutsceneRarities = { ...DEFAULT_STATE.cutsceneRarities, ...(mig.cutsceneRarities || {}) }; if (!Array.isArray(state.inventory)) state.inventory = []; if (!Array.isArray(state.discovered)) state.discovered = []; if (!Array.isArray(state.specialAuras)) state.specialAuras = []; sanitizeLoadedState(); if (state.specialAuras.length === 0) state.specialAuras = generateSpecialAurasForSave(10, []); rebuildAuraPool(); player.x = state.playerX ?? SPAWN_X; player.y = state.playerY ?? SPAWN_Y; updatePlayerPos(); applyDeviceClass(); updateHUD(); renderBiome(); closeModal(); saveGame(true); addFeedSpecial('✓ Restored.'); }
+function confirmReset() { openModal(`<h2>Reset Progress</h2><p>Erases everything.</p><button class="modal-btn" style="background:linear-gradient(180deg,#8a2a2a,#5a1a1a);" onclick="resetGame()">Reset</button><button class="modal-btn close-btn" onclick="closeModal()">Cancel</button>`); }
+function resetGame() { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(BACKUP_KEY); localStorage.removeItem(BACKUP_KEY + '-at'); state = JSON.parse(JSON.stringify(DEFAULT_STATE)); state.specialAuras = generateSpecialAurasForSave(10, []); rebuildAuraPool(); player.x = SPAWN_X; player.y = SPAWN_Y; updatePlayerPos(); updateHUD(); renderBiome(); applySidebarState(); document.getElementById('rollFeed').innerHTML = ''; addFeedSystem('Progress reset.'); closeModal(); saveGame(true); }
+function timeAgo(ts) { if (!ts) return '—'; const s = Math.floor((Date.now() - ts) / 1000); if (s < 5) return 'just now'; if (s < 60) return `${s}s ago`; if (s < 3600) return `${Math.floor(s / 60)}m ago`; if (s < 86400) return `${Math.floor(s / 3600)}h ago`; return `${Math.floor(s / 86400)}d ago`; }
+function updateSaveIndicator(saving, showToast) { const i = document.getElementById('saveIndicator'); if (!i) return; if (saving) { i.classList.add('show', 'saving'); i.textContent = '⟳ Saving'; } else if (showToast) { i.classList.remove('saving'); i.classList.add('show'); i.textContent = '✓ Saved'; clearTimeout(i._t); i._t = setTimeout(() => i.classList.remove('show'), 1600); } }
+function showRestoreBanner(text, detail, type) { const b = document.getElementById('restoreBanner'); document.getElementById('restoreText').innerHTML = text; document.getElementById('restoreDetail').innerHTML = detail || ''; b.classList.remove('warning', 'error', 'success'); if (type === 'warning') b.classList.add('warning'); else if (type === 'error') b.classList.add('error'); else if (type === 'success') b.classList.add('success'); b.classList.add('show'); clearTimeout(b._t); b._t = setTimeout(() => b.classList.remove('show'), 9000); }
+
+// ============================================================
+// WORLD
+// ============================================================
+const WORLD_W = 2200, WORLD_H = 1600;
+const world = document.getElementById('world');
+const viewport = document.getElementById('worldViewport');
+const player = { x: SPAWN_X, y: SPAWN_Y, speed: 5 };
+const keys = {};
+
+// Build chibi from a config
+function chibiHTML(config) {
+  const c = config || {};
+  const outfit = c.outfit || 'player';
+  const hair = c.hair || '#ff8ab6';
+  const body = c.body || '#9b6bff';
+  const accessory = c.accessory || '';
+  return `
+    <div class="chibi" style="--hair-color:${hair};--body-color:${body};--glow:${c.glow || 'rgba(155,107,255,0.6)'};">
+      ${accessory}
+      <div class="head">
+        <div class="hair-top"></div>
+        <div class="hair-side left"></div>
+        <div class="hair-side right"></div>
+        <div class="face-eye left"></div>
+        <div class="face-eye right"></div>
+        <div class="face-blush left"></div>
+        <div class="face-blush right"></div>
+        <div class="face-mouth"></div>
+      </div>
+      <div class="neck"></div>
+      <div class="arm left ${outfit}"></div>
+      <div class="arm right ${outfit}"></div>
+      <div class="body ${outfit}"></div>
+      <div class="leg left ${outfit}"></div>
+      <div class="leg right ${outfit}"></div>
+      <div class="foot left"></div>
+      <div class="foot right"></div>
+    </div>
+  `;
+}
+
+function buildPlayerChibi() {
+  const el = document.createElement('div');
+  el.id = 'avatar';
+  el.classList.add('idle');
+  el.innerHTML = `<div class="aura-cloak" id="auraCloak"></div><div class="aura-effect-layer" id="auraEffectLayer"></div><div class="aura-ring" id="auraRing"></div><div class="aura-ornament" id="auraOrnament"></div>` + chibiHTML({ outfit: 'player', hair: '#b28aff', body: '#9b6bff', glow: 'rgba(155,107,255,0.8)' });
+  return el;
+}
+const avatarEl = buildPlayerChibi();
+
+function spriteHTML(type, v) {
+  switch (type) {
+    case 'tree': return `<div class="sprite tree ${v || ''}"><div class="trunk"></div><div class="canopy"></div></div>`;
+    case 'rock': return `<div class="sprite rock ${v || ''}"><div class="body"></div></div>`;
+    case 'flower': return `<div class="sprite flower"><div class="stem"></div><div class="petals" style="--petal:${v === 'blue' ? '#8ab6ff' : v === 'gold' ? '#ffd76e' : v === 'purple' ? '#c8a0ff' : '#ff8ab6'}"></div><div class="center"></div></div>`;
+    case 'crystal': return `<div class="sprite crystal ${v || ''}"><div class="shard"></div></div>`;
+    case 'bush': return `<div class="sprite bush ${v || ''}"><div class="body"></div></div>`;
+    case 'snowpile': return `<div class="sprite snowpile"><div class="body"></div></div>`;
+    case 'cactus': return `<div class="sprite cactus"><div class="body"></div></div>`;
+    case 'mushroom': return `<div class="sprite mushroom"><div class="stem"></div><div class="cap"></div></div>`;
+    case 'grass': return `<div class="sprite grass"></div>`;
+    case 'house': return `<div class="structure house"><div class="base"></div><div class="roof"></div></div>`;
+    case 'tower': return `<div class="structure tower"><div class="base"></div><div class="spire"></div></div>`;
+    case 'tent': return `<div class="structure tent"><div class="canvas"></div></div>`;
+    case 'well': return `<div class="structure well"><div class="rim"></div><div class="post"></div><div class="post right"></div><div class="beam"></div><div class="roof"></div></div>`;
+    case 'stall': return `<div class="structure stall"><div class="counter"></div><div class="canopy"></div></div>`;
+    case 'shrine': return `<div class="structure shrine"><div class="base"></div><div class="body"></div><div class="roof"></div></div>`;
+    default: return '';
+  }
+}
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+let decorPositions = [], structurePositions = [];
+const FOOTPRINT = { tree: 90, pine: 80, rock: 60, flower: 34, crystal: 60, bush: 60, snowpile: 70, cactus: 70, mushroom: 34, grass: 34 };
+
+function generateWorldDecor() {
+  const rand = mulberry32(42);
+  decorPositions = []; structurePositions = [];
+  structurePositions.push({ type: 'shrine', x: 1100, y: 200 });
+  structurePositions.push({ type: 'tower', x: 300, y: 260 });
+  structurePositions.push({ type: 'tower', x: 1900, y: 260 });
+  structurePositions.push({ type: 'house', x: 560, y: 620 });
+  structurePositions.push({ type: 'house', x: 1640, y: 620 });
+  structurePositions.push({ type: 'stall', x: 320, y: 1000 });
+  structurePositions.push({ type: 'stall', x: 1880, y: 1000 });
+  structurePositions.push({ type: 'house', x: 560, y: 1180 });
+  structurePositions.push({ type: 'house', x: 1640, y: 1180 });
+  structurePositions.push({ type: 'tent', x: 880, y: 1420 });
+  structurePositions.push({ type: 'tent', x: 1320, y: 1420 });
+  structurePositions.push({ type: 'well', x: 1100, y: 640 });
+  const blocked = [{ x: SPAWN_X, y: SPAWN_Y, r: 240 }, { x: 300, y: 300, r: 200 }, { x: 1900, y: 300, r: 200 }, { x: 300, y: 1300, r: 200 }, { x: 1900, y: 1300, r: 200 }, { x: 480, y: 850, r: 150 }];
+  structurePositions.forEach(s => blocked.push({ x: s.x, y: s.y, r: 170 }));
+  const types = [];
+  for (let i = 0; i < 30; i++) types.push({ type: 'tree', variant: rand() > 0.5 ? 'pine' : '' });
+  for (let i = 0; i < 20; i++) types.push({ type: 'rock' });
+  for (let i = 0; i < 16; i++) types.push({ type: 'bush', variant: rand() > 0.6 ? 'berry' : '' });
+  for (let i = 0; i < 12; i++) types.push({ type: 'mushroom' });
+  for (let i = 0; i < 30; i++) { const r = rand(); types.push({ type: 'flower', variant: r > 0.75 ? 'blue' : r > 0.5 ? 'gold' : r > 0.25 ? 'purple' : '' }); }
+  for (let i = 0; i < 45; i++) types.push({ type: 'grass' });
+  for (let i = 0; i < 5; i++) { const r = rand(); types.push({ type: 'crystal', variant: r > 0.6 ? 'pink' : r > 0.3 ? 'cyan' : '' }); }
+  const placed = [];
+  for (const t of types) {
+    const fp = FOOTPRINT[t.variant] || FOOTPRINT[t.type] || 60;
+    let x, y, tries = 0, ok = false;
+    while (tries < 80) {
+      x = 100 + rand() * (WORLD_W - 200); y = 140 + rand() * (WORLD_H - 240); ok = true;
+      for (const b of blocked) { if (Math.hypot(x - b.x, y - b.y) < b.r + fp) { ok = false; break; } }
+      if (ok) { for (const p of placed) { if (Math.hypot(x - p.x, y - p.y) < fp + p.footprint + 6) { ok = false; break; } } }
+      if (ok) break; tries++;
+    }
+    if (ok) { const item = { ...t, x, y, footprint: fp }; decorPositions.push(item); placed.push(item); }
+  }
+}
+
+// ============================================================
+// NPCS
+// ============================================================
+const SELENA_SPAWN_X = 480, SELENA_SPAWN_Y = 850;
+
+// The chibi config per NPC — full-body with outfit + accessory
+const NPC_CONFIG = {
+  aiko: { x: 300, y: 300, hair: '#ffb8d0', body: '#ff8ab6', glow: 'rgba(255,120,180,0.8)', outfit: 'miko', accessory: '<div class="torii"></div>' },
+  naomi: { x: 1900, y: 300, hair: '#d4b8ff', body: '#b28aff', glow: 'rgba(180,130,255,0.8)', outfit: 'witch', accessory: '<div class="hat"><div class="brim"></div><div class="cone"></div><div class="star"></div></div>' },
+  mika: { x: 300, y: 1300, hair: '#ffe2a0', body: '#ffc95e', glow: 'rgba(255,200,90,0.8)', outfit: 'merchant', accessory: '<div class="satchel"></div>' },
+  selena: { x: SELENA_SPAWN_X, y: SELENA_SPAWN_Y, hair: '#a8f0e0', body: '#6ee0c8', glow: 'rgba(120,255,220,0.8)', outfit: 'traveler', accessory: '<div class="cloak"></div><div class="sparkle" style="top:50px; left:8px;"></div><div class="sparkle" style="top:60px; right:6px; animation-delay:0.9s;"></div>' },
+};
+
+function buildNPCEl(id, cfg) {
+  const el = document.createElement('div');
+  el.className = 'npc'; el.id = 'npc-' + id;
+  el.style.cssText = `left:${cfg.x}px; top:${cfg.y}px;`;
+  el.innerHTML = `<div class="prompt"><span class="key">E</span>Talk</div>` + chibiHTML(cfg) + `<div class="label">${id.charAt(0).toUpperCase() + id.slice(1)}</div>`;
+  el.onclick = () => tryTalkTo(id);
+  return el;
+}
+
+const npcEls = {
+  aiko: buildNPCEl('aiko', NPC_CONFIG.aiko),
+  naomi: buildNPCEl('naomi', NPC_CONFIG.naomi),
+  mika: buildNPCEl('mika', NPC_CONFIG.mika),
+  anvil: (() => {
+    const el = document.createElement('div');
+    el.className = 'npc'; el.id = 'npc-anvil'; el.style.cssText = `left:1900px; top:1300px;`;
+    el.innerHTML = `<div class="prompt"><span class="key">E</span>Talk</div><div class="anvil-body"><div class="hammer"><div class="head"></div><div class="handle"></div></div><div class="anvil-top"></div><div class="anvil-waist"></div><div class="anvil-base"></div><div class="anvil-eye left"><div class="anvil-pupil"></div></div><div class="anvil-eye right"><div class="anvil-pupil"></div></div><div class="anvil-blush left"></div><div class="anvil-blush right"></div></div><div class="label">Anvil</div>`;
+    el.onclick = () => tryTalkTo('anvil');
+    return el;
+  })(),
+  selena: buildNPCEl('selena', NPC_CONFIG.selena),
+};
+
+const NPCS = {
+  aiko: { ...NPC_CONFIG.aiko, name: "Aiko", open: () => openAiko() },
+  naomi: { ...NPC_CONFIG.naomi, name: "Naomi", open: () => openNaomi() },
+  mika: { ...NPC_CONFIG.mika, name: "Mika", open: () => openMika() },
+  anvil: { x: 1900, y: 1300, name: "Anvil", open: () => openAnvil() },
+  selena: { ...NPC_CONFIG.selena, name: "Selena", open: () => openSelena() },
+};
+
+let nearestNPC = null;
+const TALK_RANGE = 110;
+function checkNearbyNPC() {
+  let best = null, bestD = TALK_RANGE;
+  for (const id in NPCS) {
+    if (id === 'selena' && !isSelenaVisiting()) continue;
+    const npc = NPCS[id];
+    const d = Math.hypot(npc.x - player.x, npc.y - player.y);
+    if (d < bestD) { bestD = d; best = id; }
+  }
+  if (best !== nearestNPC) {
+    if (nearestNPC) document.getElementById('npc-' + nearestNPC)?.classList.remove('in-range');
+    nearestNPC = best;
+    if (nearestNPC) document.getElementById('npc-' + nearestNPC)?.classList.add('in-range');
+    const h = document.getElementById('npcHint'); if (h) h.style.display = (nearestNPC && !IS_MOBILE) ? 'block' : 'none';
+    const b = document.getElementById('mobileInteractBtn'); if (b) b.classList.toggle('available', !!nearestNPC);
+  }
+}
+function tryTalkTo(id) {
+  if (id === 'selena' && !isSelenaVisiting()) return;
+  const n = NPCS[id];
+  const d = Math.hypot(n.x - player.x, n.y - player.y);
+  if (d < TALK_RANGE + 60) { n.open(); if (IS_MOBILE) closeMobileSidebar(); }
+}
+
+// ============================================================
+// INPUT
+// ============================================================
+window.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase(); keys[k] = true;
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
+  if (k === 'e' && nearestNPC && !state.inCutscene && modal.style.display !== 'flex') NPCS[nearestNPC].open();
+  if (k === 'escape' && modal.style.display === 'flex') closeModal();
+  if (k === ' ' && !state.inCutscene && modal.style.display !== 'flex' && !state.autoRoll && state.hasEntered) manualRoll();
+  if (k === 'tab' && state.hasEntered && modal.style.display !== 'flex' && !IS_MOBILE) { e.preventDefault(); toggleSidebar(); }
+  if ((e.ctrlKey || e.metaKey) && k === 's') { e.preventDefault(); saveGame(true); }
+});
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; resetJoystick(); });
+let joystickActive = false, joystickDelta = { x: 0, y: 0 };
+function resetJoystick() { joystickActive = false; joystickDelta = { x: 0, y: 0 }; const k = document.getElementById('joystickKnob'); if (k) k.style.transform = 'translate(0, 0)'; }
+function initJoystick() {
+  const stick = document.getElementById('joystick'); const knob = document.getElementById('joystickKnob');
+  if (!stick || !knob) return;
+  const maxR = 40; let pid = null;
+  function upd(cx, cy) { const r = stick.getBoundingClientRect(); const ox = r.left + r.width / 2, oy = r.top + r.height / 2; let dx = cx - ox, dy = cy - oy; const d = Math.hypot(dx, dy); if (d > maxR) { dx = dx / d * maxR; dy = dy / d * maxR; } knob.style.transform = `translate(${dx}px, ${dy}px)`; joystickDelta = { x: dx / maxR, y: dy / maxR }; }
+  stick.addEventListener('pointerdown', e => { e.preventDefault(); pid = e.pointerId; stick.setPointerCapture(e.pointerId); joystickActive = true; upd(e.clientX, e.clientY); });
+  stick.addEventListener('pointermove', e => { if (!joystickActive || e.pointerId !== pid) return; e.preventDefault(); upd(e.clientX, e.clientY); });
+  const rel = e => { if (e.pointerId !== pid && pid !== null) return; joystickActive = false; pid = null; resetJoystick(); };
+  stick.addEventListener('pointerup', rel); stick.addEventListener('pointercancel', rel); stick.addEventListener('lostpointercapture', rel);
+}
+function mobileRoll() { if (state.hasEntered && !state.inCutscene && modal.style.display !== 'flex' && !state.autoRoll) manualRoll(); }
+function mobileInteract() { if (nearestNPC && !state.inCutscene) NPCS[nearestNPC].open(); }
+function toggleMobileSidebar() { const sb = document.getElementById('sidebar'); const bd = document.getElementById('sidebarBackdrop'); const tb = document.getElementById('mobileSidebarTab'); if (sb.classList.contains('mobile-open')) { closeMobileSidebar(); return; } sb.classList.add('mobile-open'); bd.classList.add('show'); tb.textContent = '▼ Close'; }
+function closeMobileSidebar() { const sb = document.getElementById('sidebar'); const bd = document.getElementById('sidebarBackdrop'); const tb = document.getElementById('mobileSidebarTab'); sb.classList.remove('mobile-open'); bd.classList.remove('show'); tb.textContent = '▲ Menu'; }
+function toggleSidebar() { state.sidebarHidden = !state.sidebarHidden; applySidebarState(); scheduleSave(); }
+function applySidebarState() {
+  const sb = document.getElementById('sidebar'); const btn = document.getElementById('toggleUiBtn');
+  if (IS_MOBILE) {
+    if (state.sidebarHidden) { sb.classList.remove('mobile-open'); closeMobileSidebar(); }
+    document.getElementById('mobileSidebarTab').classList.toggle('show', !!state.hasEntered);
+    document.getElementById('mobileTopBar').classList.toggle('show', !!state.hasEntered);
+    document.getElementById('mobileControls').classList.toggle('show', !!state.hasEntered);
+  } else {
+    if (state.sidebarHidden) { sb.classList.add('collapsed'); btn.textContent = 'Show UI'; }
+    else { sb.classList.remove('collapsed'); btn.textContent = 'Hide UI'; }
+    document.getElementById('mobileSidebarTab').classList.remove('show');
+    document.getElementById('mobileTopBar').classList.remove('show');
+    document.getElementById('mobileControls').classList.remove('show');
+  }
+  requestAnimationFrame(() => requestAnimationFrame(updateCamera));
+}
+
+// ============================================================
+// MOVEMENT + CAMERA (HARDENED)
+// ============================================================
+function updatePlayerPos() { player.x = Math.max(60, Math.min(WORLD_W - 60, player.x)); player.y = Math.max(120, Math.min(WORLD_H - 40, player.y)); avatarEl.style.left = player.x + 'px'; avatarEl.style.top = player.y + 'px'; state.playerX = player.x; state.playerY = player.y; }
+
+// Camera now uses getBoundingClientRect which is more reliable on mobile
+let cameraRecalcCount = 0;
+function updateCamera() {
+  const rect = viewport.getBoundingClientRect();
+  const vw = rect.width;
+  const vh = rect.height;
+  if (vw < 10 || vh < 10) {
+    // Layout not ready. Try again.
+    if (cameraRecalcCount < 20) { cameraRecalcCount++; requestAnimationFrame(updateCamera); }
+    return;
+  }
+  cameraRecalcCount = 0;
+  let camX = player.x - vw / 2;
+  let camY = player.y - vh / 2;
+  const maxX = Math.max(0, WORLD_W - vw);
+  const maxY = Math.max(0, WORLD_H - vh);
+  camX = Math.max(0, Math.min(maxX, camX));
+  camY = Math.max(0, Math.min(maxY, camY));
+  world.style.transform = `translate(${-camX}px, ${-camY}px)`;
+}
+
+let lastMoveSave = 0;
+function walkLoop() {
+  if (!state.hasEntered) return;
+  const w = keys['w'] || keys['arrowup']; const s = keys['s'] || keys['arrowdown']; const a = keys['a'] || keys['arrowleft']; const d = keys['d'] || keys['arrowright'];
+  let dx = 0, dy = 0; const sp = player.speed;
+  if (w) dy -= sp; if (s) dy += sp; if (a) dx -= sp; if (d) dx += sp;
+  if (joystickActive) { dx += joystickDelta.x * sp * 1.4; dy += joystickDelta.y * sp * 1.4; }
+  const moving = Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01;
+  if (moving) { player.x += dx; player.y += dy; updatePlayerPos(); avatarEl.classList.add('walking'); avatarEl.classList.remove('idle'); const now = Date.now(); if (now - lastMoveSave > 2000) { lastMoveSave = now; scheduleSave(); } }
+  else { avatarEl.classList.remove('walking'); avatarEl.classList.add('idle'); }
+  updateCamera(); checkNearbyNPC();
+}
+setInterval(walkLoop, 16);
+
+// Self-healing: every 500ms for the first 5 seconds, force a camera recalc
+let healTicks = 0;
+const healInterval = setInterval(() => {
+  updateCamera();
+  healTicks++;
+  if (healTicks > 10) clearInterval(healInterval);
+}, 500);
+
+// ResizeObserver for any size change
+if (typeof ResizeObserver !== 'undefined') {
+  new ResizeObserver(() => requestAnimationFrame(updateCamera)).observe(viewport);
+  new ResizeObserver(() => requestAnimationFrame(updateCamera)).observe(document.getElementById('main'));
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function luckMultiplier() { const e = state.exclusiveGear || {}; return state.baseLuck + state.gearLuck * 0.25 + state.potions.luckCount * 0.5 + state.potions.megaLuckCount * 1.5 + state.potions.prismaticCount * 2 + state.potions.voidTonicCount * 3 + (e.exclusive_luck || 0); }
+function cooldownMs() { const e = state.exclusiveGear || {}; const r = state.gearSpeed * 0.1 + state.potions.speedCount * 0.15 + state.potions.swiftCount * 0.1 + state.potions.prismaticCount * 0.2 + (e.exclusive_speed || 0); return state.baseCooldown * Math.max(0.1, 1 - r); }
+function fortuneMultiplier() { const e = state.exclusiveGear || {}; return 1 + state.gearFortune * 0.1 + state.potions.fortuneCount * 0.25 + state.potions.swiftCount * 0.1 + state.potions.goldenCount * 0.5 + state.potions.voidTonicCount * 0.5 + (e.exclusive_fortune || 0); }
+function critChance() { return state.gearCrit * 0.03; }
+function multiChance() { return state.gearMulti * 0.05; }
+function wisdomBoost() { return state.gearWisdom * 0.02; }
+function totalPotionCharges() { return Object.values(state.potions).reduce((a, b) => a + b, 0); }
+function currentBiomeKey() { return BIOME_ORDER[state.biomeIndex % BIOME_ORDER.length]; }
+
+function updateHUD() {
+  document.getElementById('coins').textContent = state.coins.toLocaleString();
+  document.getElementById('luck').textContent = luckMultiplier().toFixed(2) + 'x';
+  document.getElementById('cd').textContent = (cooldownMs() / 1000).toFixed(2) + 's';
+  document.getElementById('fortune').textContent = fortuneMultiplier().toFixed(2) + 'x';
+  document.getElementById('equipped').textContent = 'Aura: ' + (state.equipped || 'None');
+  document.getElementById('invBadge').textContent = state.inventory.length;
+  const mb = document.getElementById('mobileInvBadge'); if (mb) mb.textContent = state.inventory.length;
+  document.getElementById('autoCount').textContent = state.autoCount;
+  document.getElementById('autoBest').textContent = 'Best: ' + (state.autoBest ? state.autoBest : '—');
+  document.getElementById('feedCount').textContent = `${state.totalRolls} roll${state.totalRolls === 1 ? '' : 's'}`;
+  document.getElementById('playerNameTag').textContent = state.playerName || DEFAULT_PLAYER_NAME;
+  applyAuraVisuals();
+}
+function applyAuraVisuals() {
+  const aura = findAuraByName(state.equipped);
+  const ring = document.getElementById('auraRing'); const orn = document.getElementById('auraOrnament'); const cloak = document.getElementById('auraCloak'); const eff = document.getElementById('auraEffectLayer');
+  const bc = state.avatarColor;
+  avatarEl.style.setProperty('--body-color', bc);
+  avatarEl.style.setProperty('--hair-color', lighten(bc, 40));
+  avatarEl.style.setProperty('--glow', hexA(bc, 0.8));
+  if (aura) {
+    ring.style.borderColor = aura.color;
+    ring.style.boxShadow = '0 0 25px ' + aura.color + ', inset 0 0 20px ' + aura.color;
+    cloak.style.background = `radial-gradient(circle, ${hexA(aura.color, 0.55)} 0%, transparent 70%)`;
+    cloak.style.opacity = '0.9';
+    orn.innerHTML = buildOrnament(aura.ornament, aura.color);
+    orn.style.color = aura.color;
+    eff.style.color = aura.color;
+    eff.innerHTML = buildEffectLayer(aura);
+  } else {
+    ring.style.borderColor = 'transparent'; ring.style.boxShadow = 'none';
+    cloak.style.background = `radial-gradient(circle, ${hexA(bc, 0.35)} 0%, transparent 70%)`; cloak.style.opacity = '0.6';
+    orn.innerHTML = ''; eff.innerHTML = '';
+  }
+}
+function buildEffectLayer(a) { const c = a.color; if (!['Legendary', 'Mythic', 'Divine', 'Void'].includes(a.rarity)) return ''; const rs = a.rarity === 'Void' ? 30 : a.rarity === 'Divine' ? 26 : 22; return `<div style="position:absolute; inset:${-rs}px; border-radius:50%; border:1.5px dashed ${hexA(c, 0.7)}; animation: auraRotate 12s linear infinite; pointer-events:none;"></div>`; }
+(function () { const s = document.createElement('style'); s.textContent = `@keyframes auraRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`; document.head.appendChild(s); })();
+
+// Ornament builder — same as before but shorter (full set kept)
+function buildOrnament(orn, fb) {
+  if (!orn) orn = { type: "circle", color: fb, size: 18, animate: "float" };
+  const c = orn.color || fb || '#a987ff'; const c2 = orn.secondaryColor || c; const s = orn.size || 18;
+  const a = getOrnamentAnimation(orn.animate || 'float');
+  const uid = Math.random().toString(36).slice(2, 9);
+  switch (orn.type) {
+    case 'circle': return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="${c}" style="filter:drop-shadow(0 0 6px ${c})"/></svg></div>`;
+    case 'drop': return `<div style="${a}"><svg width="${s}" height="${s * 1.2}" viewBox="0 0 20 24"><path d="M10 1 Q18 10 18 15 A8 8 0 0 1 2 15 Q2 10 10 1 Z" fill="${c}" stroke="${darken(c, 30)}" stroke-width="1"/></svg></div>`;
+    case 'leaf': return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 20 20"><path d="M2 18 Q2 6 10 2 Q18 6 18 18 Q10 14 2 18 Z" fill="${c}" stroke="${darken(c, 25)}" stroke-width="1"/></svg></div>`;
+    case 'flame': return `<div style="${a}"><svg width="${s}" height="${s * 1.3}" viewBox="0 0 20 26"><path d="M10 1 Q15 8 16 13 Q17 20 10 24 Q3 20 4 13 Q5 8 10 1 Z" fill="${c}"/></svg></div>`;
+    case 'crystal': return `<div style="${a}"><svg width="${s}" height="${s * 1.3}" viewBox="0 0 20 26"><path d="M10 1 L17 9 L14 24 L6 24 L3 9 Z" fill="${c}" stroke="${darken(c, 35)}" stroke-width="0.8"/></svg></div>`;
+    case 'shard': return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 20 20"><polygon points="10,1 18,10 10,19 2,10" fill="${c}"/></svg></div>`;
+    case 'star': return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 20 20"><polygon points="10,1 12,8 19,8 13.5,12 15.5,19 10,15 4.5,19 6.5,12 1,8 8,8" fill="${c}"/></svg></div>`;
+    case 'sun': return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 20 20"><g style="transform-origin:center;animation:slowSpin 8s linear infinite"><line x1="10" y1="0" x2="10" y2="3" stroke="${c}" stroke-width="1.5"/><line x1="10" y1="17" x2="10" y2="20" stroke="${c}" stroke-width="1.5"/><line x1="0" y1="10" x2="3" y2="10" stroke="${c}" stroke-width="1.5"/><line x1="17" y1="10" x2="20" y2="10" stroke="${c}" stroke-width="1.5"/></g><circle cx="10" cy="10" r="5" fill="${c2}" stroke="${c}" stroke-width="1"/></svg></div>`;
+    case 'moon': return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 20 20"><path d="M13 2 A8 8 0 1 0 13 18 A6 6 0 1 1 13 2 Z" fill="${c}"/></svg></div>`;
+    case 'storm': return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 20 20"><polygon points="11,1 4,11 9,11 7,19 16,8 11,8 13,1" fill="${c}" stroke="${c2}" stroke-width="0.7"/></svg></div>`;
+    case 'wing': return `<div style="${a}"><svg width="${s * 1.3}" height="${s}" viewBox="0 0 26 20"><path d="M13 10 Q4 2 1 6 Q4 9 6 10 Q2 11 2 15 Q7 14 10 12 Q10 16 13 18 Q16 16 16 12 Q19 14 24 15 Q24 11 20 10 Q22 9 25 6 Q22 2 13 10 Z" fill="${c}"/><circle cx="13" cy="10" r="2.5" fill="${c2}"/></svg></div>`;
+    case 'skull': return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 20 20"><path d="M10 2 A7 7 0 0 0 4 10 L4 14 L7 14 L7 17 L13 17 L13 14 L16 14 L16 10 A7 7 0 0 0 10 2 Z" fill="${c}"/><circle cx="7" cy="10" r="1.8" fill="${c2}"/><circle cx="13" cy="10" r="1.8" fill="${c2}"/></svg></div>`;
+    case 'eye': return `<div style="${a}"><svg width="${s * 1.3}" height="${s * 0.8}" viewBox="0 0 26 16"><path d="M1 8 Q13 -2 25 8 Q13 18 1 8 Z" fill="${c}" stroke="${darken(c, 30)}" stroke-width="1"/><circle cx="13" cy="8" r="4" fill="${c2}"/><circle cx="13" cy="8" r="1.5" fill="#1a0a1a"/></svg></div>`;
+    case 'ring': return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="${c}" stroke-width="2.5"/><circle cx="12" cy="12" r="9" fill="none" stroke="${c2}" stroke-width="1" stroke-dasharray="3 2"/><circle cx="12" cy="3" r="1.8" fill="${c2}"/></svg></div>`;
+    case 'void': return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="${c}"/><ellipse cx="12" cy="12" rx="9" ry="3" fill="none" stroke="${c2}" stroke-width="1"/><ellipse cx="12" cy="12" rx="3" ry="9" fill="none" stroke="${c2}" stroke-width="1"/></svg></div>`;
+    case 'rune': return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 26 26"><circle cx="13" cy="13" r="11" fill="none" stroke="${c}" stroke-width="1.5" stroke-dasharray="3 2"/><circle cx="13" cy="13" r="8" fill="none" stroke="${c2}" stroke-width="1"/><path d="M13 5 L13 21 M5 13 L21 13 M7 7 L19 19 M19 7 L7 19" stroke="${c}" stroke-width="1.2"/><circle cx="13" cy="13" r="2.5" fill="${c2}"/></svg></div>`;
+    case 'blossom': return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 24 24"><g transform="translate(12,12)"><ellipse cx="0" cy="-5" rx="3" ry="5.5" fill="${c}"/><ellipse cx="0" cy="-5" rx="3" ry="5.5" fill="${c}" transform="rotate(72)"/><ellipse cx="0" cy="-5" rx="3" ry="5.5" fill="${c}" transform="rotate(144)"/><ellipse cx="0" cy="-5" rx="3" ry="5.5" fill="${c}" transform="rotate(216)"/><ellipse cx="0" cy="-5" rx="3" ry="5.5" fill="${c}" transform="rotate(288)"/><circle r="2.2" fill="${c2}"/></g></svg></div>`;
+    case 'hex': return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 24 24"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="${c}" stroke="${lighten(c, 40)}" stroke-width="1"/></svg></div>`;
+    case 'chain': return `<div style="${a}"><svg width="${s * 1.3}" height="${s}" viewBox="0 0 30 20"><ellipse cx="6" cy="10" rx="5" ry="7" fill="none" stroke="${c}" stroke-width="2"/><ellipse cx="15" cy="10" rx="5" ry="7" fill="none" stroke="${c2}" stroke-width="2"/><ellipse cx="24" cy="10" rx="5" ry="7" fill="none" stroke="${c}" stroke-width="2"/></svg></div>`;
+    case 'mirror': return `<div style="${a}"><svg width="${s}" height="${s * 1.1}" viewBox="0 0 22 24"><defs><linearGradient id="m${uid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${lighten(c, 55)}"/><stop offset="50%" stop-color="${c}"/><stop offset="100%" stop-color="${darken(c, 30)}"/></linearGradient></defs><ellipse cx="11" cy="11" rx="8" ry="10" fill="url(#m${uid})" stroke="${darken(c, 30)}" stroke-width="1.4"/></svg></div>`;
+    case 'bell': return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 22 24"><path d="M11 2 Q18 6 19 15 L20 18 L2 18 L3 15 Q4 6 11 2 Z" fill="${c}"/><ellipse cx="11" cy="20" rx="3" ry="2" fill="${c2}"/></svg></div>`;
+    case 'hourglass': return `<div style="${a}"><svg width="${s}" height="${s * 1.2}" viewBox="0 0 20 24"><path d="M3 2 L17 2 L17 6 Q17 11 10 12 Q3 11 3 6 Z" fill="${c}" stroke="${darken(c, 30)}" stroke-width="1"/><path d="M3 22 L17 22 L17 18 Q17 13 10 12 Q3 13 3 18 Z" fill="${c}" stroke="${darken(c, 30)}" stroke-width="1"/><rect x="2" y="1" width="16" height="2" fill="${c2}"/><rect x="2" y="21" width="16" height="2" fill="${c2}"/></svg></div>`;
+    case 'mask': return `<div style="${a}"><svg width="${s}" height="${s * 1.1}" viewBox="0 0 22 24"><path d="M3 4 Q11 1 19 4 Q20 12 11 22 Q2 12 3 4 Z" fill="${c}" stroke="${darken(c, 30)}" stroke-width="1"/><path d="M6 9 Q8 7 10 9 M12 9 Q14 7 16 9" stroke="${c2}" stroke-width="1.4" fill="none"/></svg></div>`;
+    case 'arrow': return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 22 22"><polygon points="11,2 20,20 11,15 2,20" fill="${c}" stroke="${c2}" stroke-width="0.8"/></svg></div>`;
+    case 'crown': return `<div style="${a}"><svg width="${s * 1.2}" height="${s}" viewBox="0 0 26 22"><path d="M3 18 L5 6 L10 12 L13 4 L16 12 L21 6 L23 18 Z" fill="${c}"/><rect x="3" y="18" width="20" height="3" fill="${c2}"/></svg></div>`;
+    case 'gear': return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 24 24"><g transform="translate(12,12)"><rect x="-2" y="-10" width="4" height="20" fill="${c}"/><rect x="-2" y="-10" width="4" height="20" fill="${c}" transform="rotate(45)"/><rect x="-2" y="-10" width="4" height="20" fill="${c}" transform="rotate(90)"/><rect x="-2" y="-10" width="4" height="20" fill="${c}" transform="rotate(135)"/><circle r="5" fill="${c}"/><circle r="2.2" fill="${c2}"/></g></svg></div>`;
+    case 'branch': return `<div style="${a}"><svg width="${s}" height="${s * 1.1}" viewBox="0 0 22 24"><path d="M11 22 L11 6 M11 12 L5 8 M11 15 L17 11" stroke="${c}" stroke-width="1.6" fill="none"/><circle cx="11" cy="6" r="2" fill="${c2}"/></svg></div>`;
+    case 'rift': return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M3 12 Q8 10 12 12 Q16 14 21 12" fill="none" stroke="${c}" stroke-width="2.2"/><path d="M3 8 Q8 6 12 8 Q16 10 21 8" fill="none" stroke="${c2}" stroke-width="1.4" opacity="0.8"/><path d="M3 16 Q8 14 12 16 Q16 18 21 16" fill="none" stroke="${c2}" stroke-width="1.4" opacity="0.8"/></svg></div>`;
+    default: return `<div style="${a}"><svg width="${s}" height="${s}" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="${c}"/></svg></div>`;
+  }
+}
+function getOrnamentAnimation(kind) {
+  switch (kind) {
+    case 'spin': return 'animation:ornamentSpin 6s linear infinite;transform-origin:center;display:inline-block;';
+    case 'pulse': return 'animation:ornamentPulse 2.4s ease-in-out infinite;display:inline-block;';
+    case 'drift': return 'animation:ornamentDrift 4.5s ease-in-out infinite;display:inline-block;';
+    case 'sway': return 'animation:ornamentSway 3.6s ease-in-out infinite;display:inline-block;';
+    case 'track': return 'animation:ornamentTrack 4s ease-in-out infinite;display:inline-block;';
+    case 'flip': return 'animation:ornamentFlip 3.2s ease-in-out infinite;display:inline-block;';
+    default: return 'animation:ornamentFloat 3.4s ease-in-out infinite;display:inline-block;';
+  }
+}
+(function () { const s = document.createElement('style'); s.textContent = `@keyframes ornamentSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }@keyframes ornamentPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.18); } }@keyframes ornamentFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }@keyframes ornamentDrift { 0%,100% { transform: translate(-3px, 0) rotate(-8deg); } 50% { transform: translate(3px, -4px) rotate(8deg); } }@keyframes ornamentSway { 0%,100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }@keyframes ornamentTrack { 0%,100% { transform: translateX(-3px); } 50% { transform: translateX(3px); } }@keyframes ornamentFlip { 0%,45%,100% { transform: rotateY(0deg); } 55%,95% { transform: rotateY(180deg); } }@keyframes slowSpin { to { transform: rotate(360deg); } }`; document.head.appendChild(s); })();
+function lighten(hex, pct) { const c = hex.replace('#', ''); const num = parseInt(c, 16); let r = Math.min(255, (num >> 16) + pct), g = Math.min(255, (num >> 8 & 0xff) + pct), b = Math.min(255, (num & 0xff) + pct); return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1); }
+function darken(hex, pct) { const c = hex.replace('#', ''); const num = parseInt(c, 16); let r = Math.max(0, (num >> 16) - pct), g = Math.max(0, (num >> 8 & 0xff) - pct), b = Math.max(0, (num & 0xff) - pct); return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1); }
+function hexA(hex, a) { const c = hex.replace('#', ''); const num = parseInt(c, 16); return `rgba(${num >> 16},${num >> 8 & 0xff},${num & 0xff},${a})`; }
+function setAvatarShape(shape) { state.avatarShape = shape; applyAvatarShape(); scheduleSave(); }
+function applyAvatarShape() {
+  // With the new chibi model, "shape" changes the accessory / hair style
+  // We'll just adjust the player's hair-side and add cat ears if cat
+  const av = document.getElementById('avatar');
+  if (!av) return;
+  av.querySelectorAll('.cat-ear').forEach(e => e.remove());
+  const head = av.querySelector('.chibi .head');
+  if (!head) return;
+  if (state.avatarShape === 'cat') {
+    const l = document.createElement('div'); l.className = 'cat-ear'; l.style.cssText = 'position:absolute;top:-8px;left:2px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:12px solid var(--hair-color,#b28aff);z-index:2;';
+    const r = document.createElement('div'); r.className = 'cat-ear'; r.style.cssText = 'position:absolute;top:-8px;right:2px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:12px solid var(--hair-color,#b28aff);z-index:2;';
+    head.appendChild(l); head.appendChild(r);
+  }
+}
+
+// ============================================================
+// FEED
+// ============================================================
+const FEED_MAX = IS_MOBILE ? 30 : 60;
+function _feed(cls, html) { const f = document.getElementById('rollFeed'); if (!f) return; const m = document.createElement('div'); m.className = 'feed-msg ' + cls; m.innerHTML = html; f.appendChild(m); while (f.children.length > FEED_MAX) f.removeChild(f.firstChild); requestAnimationFrame(() => { f.scrollTop = f.scrollHeight; }); }
+function addFeedRoll(p, cg, mult) { const b = p.biome ? BIOMES[p.biome] : null; const mb = mult > 1 ? `<div style="position:absolute; top:-4px; right:-4px; background:linear-gradient(180deg,#ffd76e,#b8842a); color:#2a1a0a; font-size:9px; font-weight:900; padding:1px 5px; border-radius:999px; border:1.5px solid #fff;">x${mult}</div>` : ''; const html = `<div style="position:relative;"><div class="avatar-dot" style="--msg-color:${p.color}; --msg-dark:${darken(p.color, 40)};"></div>${mb}</div><div class="content"><div class="roll-name" style="color:${p.color}">${p.icon} ${p.name}${p.isSpecial ? ' ★' : ''}</div><div class="roll-meta"><span style="color:${p.color}">${p.rarity}</span>${b ? `<span>${b.name}</span>` : ''}<span>1 in ${p.chance}</span><span class="coin-tag">+${cg.toLocaleString()}</span></div></div>`; _feed(p.cutscene ? 'rare' : '', html); }
+function addFeedSystem(t) { _feed('system-msg', `<div class="content">${t}</div>`); }
+function addFeedSpecial(t) { _feed('special-msg', `<div class="content">${t}</div>`); }
+function addFeedSelena(t) { _feed('selena-msg', `<div class="content">${t}</div>`); }
+function addFeedSell(t) { _feed('sell-msg', `<div class="content">${t}</div>`); }
+
+// ============================================================
+// ROLL
+// ============================================================
+function pickAura() {
+  const pool = getRollPool(); const luck = luckMultiplier(); const wb = wisdomBoost();
+  const adj = pool.map(a => Math.pow(luck, (1 - a.chance / 4000)) * (1 + wb) * (a.weight || a.chance));
+  const total = adj.reduce((s, w) => s + w, 0);
+  let r = Math.random() * total, acc = 0;
+  for (let i = 0; i < pool.length; i++) { acc += adj[i]; if (r <= acc) return pool[i]; }
+  return pool[0];
+}
+function doRoll() {
+  const p = pickAura();
+  let cg = Math.floor(p.value * fortuneMultiplier());
+  const c = Math.random() < critChance(); const m = Math.random() < multiChance();
+  let mult = 1; if (c) mult *= 2; if (m) mult *= 3; cg *= mult;
+  state.coins += cg;
+  for (let i = 0; i < mult; i++) state.inventory.push(p.name);
+  state.totalRolls++;
+  if (!state.discovered.includes(p.name)) state.discovered.push(p.name);
+  if (!state.autoBest) state.autoBest = p.name;
+  else { const bi = BASE_AURAS.findIndex(x => x.name === p.name); const bbi = BASE_AURAS.findIndex(x => x.name === state.autoBest); if (bi !== -1 && (bbi === -1 || bi < bbi)) state.autoBest = p.name; }
+  addFeedRoll(p, cg, mult); updateHUD(); scheduleSave();
+  return p;
+}
+let rollInFlight = false;
+function manualRoll() {
+  if (rollInFlight || state.inCutscene || state.autoRoll || modal.style.display === 'flex') return;
+  rollInFlight = true;
+  const b = document.getElementById('rollBtn'); if (b) { b.disabled = true; b.textContent = 'Rolling...'; }
+  const mb = document.getElementById('mobileRollBtn'); if (mb) mb.style.opacity = '0.6';
+  let p; try { p = doRoll(); } catch (e) { p = null; }
+  const rel = () => { rollInFlight = false; if (b) { b.disabled = false; b.textContent = 'Roll'; } if (mb) mb.style.opacity = '1'; };
+  if (!p) { rel(); return; }
+  if (shouldCutscene(p)) { state.inCutscene = true; playCutscene(p, rel); }
+  else setTimeout(rel, cooldownMs());
+}
+function shouldCutscene(a) { if (!a.cutscene) return false; return state.cutsceneRarities[a.rarity] !== false; }
+let autoTimer = null, autoInFlight = false;
+function toggleAutoRoll() { state.autoRoll = !state.autoRoll; document.getElementById('autoSwitch').classList.toggle('on', state.autoRoll); if (state.autoRoll) { addFeedSystem('Auto Roll on.'); startAutoLoop(); } else { addFeedSystem('Auto Roll off.'); stopAutoLoop(); } scheduleSave(); }
+function setAutoMode(m) { state.autoMode = m; document.querySelectorAll('.auto-options button').forEach(b => b.classList.toggle('active', b.dataset.mode === m)); scheduleSave(); }
+function startAutoLoop() { stopAutoLoop(); autoTimer = setInterval(autoRollTick, 100); }
+function stopAutoLoop() { if (autoTimer) clearInterval(autoTimer); autoTimer = null; autoInFlight = false; }
+function autoRollTick() {
+  if (!state.autoRoll || autoInFlight || state.inCutscene || rollInFlight) return;
+  autoInFlight = true; state.autoCount++;
+  let p; try { p = doRoll(); } catch (e) { p = null; }
+  const done = () => { autoInFlight = false; };
+  if (!p) { done(); return; }
+  if (state.autoMode === 'stop') { const R = ['Rare', 'Legendary', 'Mythic', 'Divine', 'Void']; if (R.includes(p.rarity)) { state.autoRoll = false; document.getElementById('autoSwitch').classList.remove('on'); addFeedSystem(`Stopped on ${p.name}.`); if (shouldCutscene(p)) { state.inCutscene = true; playCutscene(p, done); } else setTimeout(done, 400); scheduleSave(); return; } }
+  const d = state.autoMode === 'fast' ? 100 : 300;
+  setTimeout(done, Math.max(d, cooldownMs() * 0.25));
+}
+function trySpawnSpecialAura() {
+  const now = Date.now();
+  if (now - state.lastSpecialAuraAt < SPECIAL_AURA_INTERVAL) return;
+  if (state.specialAuras.length >= MAX_SPECIAL_AURAS) state.specialAuras.shift();
+  const n = state.specialAuras.map(a => a.name); const h = state.specialAuras.map(a => getHueFromHex(a.color)); const o = state.specialAuras.map(a => ({ type: a.ornament.type, hue: getHueFromHex(a.color) }));
+  const na = generateSpecialAura(n, h, o);
+  state.specialAuras.push(na); state.lastSpecialAuraAt = now;
+  rebuildAuraPool();
+  addFeedSpecial(`★ New special: <b style="color:${na.color}">${na.icon} ${na.name}</b>`);
+  updateHUD(); scheduleSave();
+}
+setInterval(trySpawnSpecialAura, 10000);
+
+// SELENA
+function isSelenaVisiting() { const n = Date.now(); return state.selenaVisitStartedAt && n - state.selenaVisitStartedAt < SELENA_VISIT_DURATION; }
+function selenaTimeRemaining() { if (!isSelenaVisiting()) return 0; return Math.max(0, SELENA_VISIT_DURATION - (Date.now() - state.selenaVisitStartedAt)); }
+function selenaTimeUntilNext() { if (isSelenaVisiting()) return 0; return Math.max(0, state.nextSelenaVisitAt - Date.now()); }
+function tickSelena() { const now = Date.now(); const v = isSelenaVisiting(); document.getElementById('selenaTag').classList.toggle('show', v); const el = document.getElementById('npc-selena'); if (el) el.style.display = v ? 'flex' : 'none'; if (v) { const r = selenaTimeRemaining(); const m = Math.floor(r / 60000), s = Math.floor((r % 60000) / 1000); document.getElementById('selenaTimerHeader').textContent = `${m}:${s.toString().padStart(2, '0')}`; } else { if (state.nextSelenaVisitAt === 0) state.nextSelenaVisitAt = now + 60000; else if (now >= state.nextSelenaVisitAt) arriveSelena(); } }
+function generateSelenaStock() { const s = []; const pk = Object.keys(POTIONS); const sh = [...pk].sort(() => Math.random() - 0.5); for (let i = 0; i < 4; i++) { const k = sh[i]; const p = POTIONS[k]; s.push({ kind: 'potion', key: k, label: p.label, icon: '🧪', color: p.color, basePrice: p.cost, price: Math.round(p.cost * (1 - SELENA_DISCOUNT)), discount: SELENA_DISCOUNT, desc: p.effect }); } const gk = Object.keys(GEAR); const k = gk[Math.floor(Math.random() * gk.length)]; const g = GEAR[k]; const lv = state[{ luck: 'gearLuck', speed: 'gearSpeed', fortune: 'gearFortune', crit: 'gearCrit', multi: 'gearMulti', wisdom: 'gearWisdom' }[k]]; if (lv < g.maxLevel) { const bc = g.baseCost + lv * Math.round(g.baseCost * 1.3); s.push({ kind: 'gear', key: k, label: g.label + " (Deal)", icon: '⚒️', color: g.color, basePrice: bc, price: Math.round(bc * (1 - SELENA_DISCOUNT)), discount: SELENA_DISCOUNT, desc: g.effect }); } const av = SELENA_EXCLUSIVE_AURAS.filter(a => !state.selenaExclusiveOwned.includes(a.name)); const pool = []; for (const a of av) pool.push({ kind: 'exclusive-aura', auraName: a.name, label: a.name, icon: a.icon, color: a.color, price: Math.round(a.value * 0.7) + 500, desc: `Exclusive ${a.rarity}` }); const shp = pool.sort(() => Math.random() - 0.5); for (let i = 0; i < Math.min(2, shp.length); i++) s.push(shp[i]); return s; }
+function arriveSelena() { const now = Date.now(); state.selenaVisitStartedAt = now; state.selenaVisitCount = (state.selenaVisitCount || 0) + 1; state.selenaStock = generateSelenaStock(); state.nextSelenaVisitAt = now + SELENA_VISIT_DURATION + SELENA_VISIT_INTERVAL; addFeedSelena('✦ <b>Selena</b> has arrived!'); updateHUD(); scheduleSave(); }
+function departSelena() { const el = document.getElementById('npc-selena'); if (el) { el.classList.add('departing'); setTimeout(() => { el.style.display = 'none'; el.classList.remove('departing'); }, 600); } addFeedSelena('Selena departed.'); state.selenaVisitStartedAt = 0; state.selenaStock = []; }
+setInterval(() => { const v = isSelenaVisiting(); if (v && selenaTimeRemaining() === 0) { departSelena(); updateHUD(); return; } tickSelena(); }, 1000);
+function openSelena() {
+  if (!isSelenaVisiting()) { openModal(`<h2>✦ Selena</h2><p>Not currently on the island.</p><p style="font-size:11px;opacity:0.7">Next in ~<b>${Math.ceil(selenaTimeUntilNext() / 60000)} min</b>.</p><button class="modal-btn close-btn" onclick="closeModal()">Close</button>`); return; }
+  const r = selenaTimeRemaining(); const m = Math.floor(r / 60000), s = Math.floor((r % 60000) / 1000); const ts = `${m}:${s.toString().padStart(2, '0')}`;
+  const stock = state.selenaStock || [];
+  const items = stock.map((it, i) => {
+    if (it.kind === 'potion' || it.kind === 'gear') { const ca = state.coins >= it.price; return `<div class="selena-item"><div class="s-icon" style="color:${it.color}">${it.icon}</div><div class="s-info"><div class="s-name" style="color:${it.color}">${it.label}</div><div class="s-desc">${it.desc}</div></div><div class="s-price-row"><div><div class="s-price-old">${it.basePrice}🪙</div><div class="s-price">${it.price}🪙</div></div><button onclick="buyFromSelena(${i})" ${ca ? '' : 'disabled'}>Buy</button></div></div>`; }
+    if (it.kind === 'exclusive-aura') { const o = state.inventory.includes(it.auraName); const ca = state.coins >= it.price; return `<div class="selena-item"><div class="s-icon" style="color:${it.color}">${it.icon}</div><div class="s-info"><div class="s-name" style="color:${it.color}">${it.label}</div><div class="s-desc">${it.desc}</div></div><div class="s-price-row"><div class="s-price">${it.price}🪙</div>${o ? `<div class="owned-tag">OWNED</div>` : `<button onclick="buyFromSelena(${i})" ${ca ? '' : 'disabled'}>Buy</button>`}</div></div>`; }
+    return '';
+  }).join('');
+  openModal(`<h2>✦ Selena — Traveling Merchant</h2><div class="dialogue" style="border-left-color:#78ffdc; background:rgba(120,255,220,0.08); color:#d8fff0;">"The best bargains are the ones you didn't know you needed."</div><p style="font-size:12px;color:#b8ffe8">Departs in <b>${ts}</b></p>${items}<button class="modal-btn close-btn" onclick="closeModal()">Close</button>`);
+}
+function buyFromSelena(i) { if (!isSelenaVisiting()) return; const it = state.selenaStock[i]; if (!it || state.coins < it.price) return; if (it.kind === 'potion') { state.coins -= it.price; state.potions[it.key + 'Count']++; addFeedSelena(`Bought ${it.label}`); } else if (it.kind === 'gear') { const m = { luck: 'gearLuck', speed: 'gearSpeed', fortune: 'gearFortune', crit: 'gearCrit', multi: 'gearMulti', wisdom: 'gearWisdom' }; const g = GEAR[it.key]; const lv = state[m[it.key]]; if (lv >= g.maxLevel) return; state.coins -= it.price; state[m[it.key]]++; } else if (it.kind === 'exclusive-aura') { const a = SELENA_EXCLUSIVE_AURAS.find(x => x.name === it.auraName); if (a && !state.inventory.includes(a.name)) { state.coins -= it.price; state.inventory.push(a.name); if (!state.discovered.includes(a.name)) state.discovered.push(a.name); if (!state.selenaExclusiveOwned.includes(a.name)) state.selenaExclusiveOwned.push(a.name); addFeedSelena(`Acquired ${a.name}!`); } } updateHUD(); scheduleSave(); openSelena(); }
+
+// SELLING
+let invTab = 'auras';
+function getOwnedAuraCounts() { const c = {}; state.inventory.forEach(n => c[n] = (c[n] || 0) + 1); return c; }
+function getDuplicates() { const counts = getOwnedAuraCounts(); const r = []; for (const [name, count] of Object.entries(counts)) { if (count >= 2) { const a = findAuraByName(name); if (!a) continue; r.push({ name, aura: a, count, spare: count - 1, unitPrice: getSellPrice(a) }); } } return r; }
+function openSellPanel() { renderSellModal(); }
+function renderSellModal() { const dupes = getDuplicates(); dupes.sort((a, b) => b.unitPrice * b.spare - a.unitPrice * a.spare); const totalSpare = dupes.reduce((s, d) => s + d.spare, 0); const totalValue = dupes.reduce((s, d) => s + d.spare * d.unitPrice, 0); const rows = dupes.length === 0 ? `<p style="text-align:center;opacity:0.6;padding:24px 0">No duplicates to sell.</p>` : dupes.map(d => { const a = d.aura; return `<div class="sell-row"><div class="sr-icon" style="color:${a.color}">${a.icon}</div><div class="sr-info"><div class="sr-name" style="color:${a.color}">${a.name}${a.isSpecial ? ' ★' : ''}</div><div class="sr-meta">${a.rarity} • <span class="sell-price-tag">${d.unitPrice}🪙 each</span></div></div><div class="sr-qty">×${d.spare}</div><div class="sr-actions"><button onclick="sellOne('${a.name.replace(/'/g, "\\'")}')">Sell 1</button><button class="bulk" onclick="sellAllOf('${a.name.replace(/'/g, "\\'")}')">Sell ${d.spare}</button></div></div>`; }).join(''); openModal(`<h2>💰 Sell Duplicates</h2><div class="sell-summary"><div><b>${totalSpare}</b> spares worth <span class="total-value">${totalValue.toLocaleString()}🪙</span></div><div style="font-size:11px;opacity:0.7">Sold: ${state.totalSold} · Earned: ${state.totalEarnedFromSales.toLocaleString()}🪙</div></div><div class="sell-header"><button onclick="sellAllSpare()" ${totalSpare === 0 ? 'disabled' : ''}>💰 Sell ALL Spares (${totalValue.toLocaleString()}🪙)</button><button onclick="sellAllExceptEquipped()" ${state.inventory.length <= (state.equipped ? 1 : 0) ? 'disabled' : ''}>🧹 Sell Everything Except Equipped</button></div>${rows}<button class="modal-btn close-btn" onclick="closeModal()">Close</button>`); }
+function sellOne(name) { const c = getOwnedAuraCounts(); if (!c[name] || c[name] < 2) return; const a = findAuraByName(name); if (!a) return; const price = getSellPrice(a); const i = state.inventory.indexOf(name); if (i === -1) return; state.inventory.splice(i, 1); state.coins += price; state.totalSold++; state.totalEarnedFromSales += price; state.soldLog.push({ name, price, at: Date.now() }); if (state.soldLog.length > 20) state.soldLog.shift(); addFeedSell(`Sold ${a.icon} ${a.name} for <b>${price}🪙</b>`); updateHUD(); scheduleSave(); renderSellModal(); }
+function sellAllOf(name) { const a = findAuraByName(name); if (!a) return; const c = getOwnedAuraCounts(); const spare = (c[name] || 0) - 1; if (spare < 1) return; const price = getSellPrice(a) * spare; const nw = []; let seen = false; for (const n of state.inventory) { if (n === name && !seen) { seen = true; nw.push(n); } else if (n === name && seen) continue; else nw.push(n); } state.inventory = nw; state.coins += price; state.totalSold += spare; state.totalEarnedFromSales += price; state.soldLog.push({ name, price, count: spare, at: Date.now() }); if (state.soldLog.length > 20) state.soldLog.shift(); addFeedSell(`Sold ${spare}× ${a.icon} ${a.name} for <b>${price}🪙</b>`); updateHUD(); scheduleSave(); renderSellModal(); }
+function sellAllSpare() { const dupes = getDuplicates(); if (dupes.length === 0) return; let tc = 0, ti = 0; for (const d of dupes) { const price = d.unitPrice * d.spare; tc += price; ti += d.spare; let seen = false; const nw = []; for (const n of state.inventory) { if (n === d.name && !seen) { seen = true; nw.push(n); } else if (n === d.name && seen) continue; else nw.push(n); } state.inventory = nw; } state.coins += tc; state.totalSold += ti; state.totalEarnedFromSales += tc; addFeedSell(`Sold <b>${ti}</b> spares for <b>${tc.toLocaleString()}🪙</b>!`); updateHUD(); scheduleSave(); renderSellModal(); }
+function sellAllExceptEquipped() { const keepEq = state.equipped; let tc = 0, ti = 0; const nw = []; const seen = {}; for (const n of state.inventory) { if (n === keepEq) { nw.push(n); seen[n] = (seen[n] || 0) + 1; continue; } if ((seen[n] || 0) < 1) { nw.push(n); seen[n] = (seen[n] || 0) + 1; } else { const a = findAuraByName(n); if (a) { tc += getSellPrice(a); ti++; } } } if (ti === 0) { addFeedSystem('Nothing to sell.'); return; } state.inventory = nw; state.coins += tc; state.totalSold += ti; state.totalEarnedFromSales += tc; addFeedSell(`Sold <b>${ti}</b> spares for <b>${tc.toLocaleString()}🪙</b>!`); updateHUD(); scheduleSave(); renderSellModal(); }
+
+// INVENTORY / INDEX / SETTINGS
+function openInventory() { invTab = 'auras'; renderInventoryModal(); }
+function switchInvTab(t) { invTab = t; renderInventoryModal(); }
+function renderInventoryModal() {
+  const tabs = `<div class="inv-tabs"><button class="inv-tab ${invTab === 'auras' ? 'active' : ''}" onclick="switchInvTab('auras')">Auras (${state.inventory.length})</button><button class="inv-tab ${invTab === 'specials' ? 'active' : ''}" onclick="switchInvTab('specials')">Special (${state.specialAuras.length})</button><button class="inv-tab ${invTab === 'potions' ? 'active' : ''}" onclick="switchInvTab('potions')">Potions</button><button class="inv-tab ${invTab === 'gear' ? 'active' : ''}" onclick="switchInvTab('gear')">Gear</button></div>`;
+  let content = '';
+  if (invTab === 'auras') {
+    const counts = getOwnedAuraCounts();
+    const names = Object.keys(counts).sort((a, b) => (findAuraByName(a)?.chance || 99999) - (findAuraByName(b)?.chance || 99999));
+    if (names.length === 0) content = `<p style="text-align:center;opacity:0.6;padding:24px 0">Empty.</p>`;
+    else {
+      const dc = names.filter(n => counts[n] >= 2).length;
+      if (dc > 0) content = `<div style="text-align:center;margin-bottom:8px;"><button onclick="closeModal(); openSellPanel();" style="background:linear-gradient(180deg,#8a6a20,#5a4510); font-size:12px;">💰 Sell ${dc} duplicate type${dc === 1 ? '' : 's'}</button></div>`;
+      content += `<div class="inv-grid">${names.map(name => { const a = findAuraByName(name); if (!a) return ''; const eq = state.equipped === name; const bi = a.biome ? BIOMES[a.biome] : null; const cls = a.isSpecial ? 'special' : (a.isExclusive ? 'exclusive' : ''); const hasD = counts[name] >= 2; return `<div class="inv-card ${eq ? 'equipped' : ''} ${cls}" onclick="equipAura('${name.replace(/'/g, "\\'")}', true)"><div class="count">×${counts[name]}${hasD ? ' 💰' : ''}</div>${bi ? `<div style="position:absolute;top:-6px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:800;padding:1px 8px;border-radius:999px;color:#fff;background:${bi.color}">${bi.name.split(' ')[0]}</div>` : ''}${a.isSpecial ? `<div style="position:absolute;top:-6px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:800;padding:1px 8px;border-radius:999px;color:#2a0a0a;background:linear-gradient(180deg,#ffd76e,#ff9a55)">★</div>` : ''}<div class="icon" style="color:${a.color}">${a.icon}</div><div class="name" style="color:${a.color}">${a.name}</div><div class="rarity">${a.rarity}</div><div class="chance">1 in ${a.chance}</div>${hasD ? `<div style="font-size:9px; color:#ffd76e; margin-top:2px">${getSellPrice(a)}🪙 ea</div>` : ''}${eq ? `<div class="equip-tag">Equipped</div>` : `<div class="equip-tag" style="opacity:0.5">Tap to equip</div>`}</div>`; }).join('')}</div>`;
+    }
+  } else if (invTab === 'specials') { content = `<div class="inv-grid">${state.specialAuras.slice().reverse().map(a => { const o = state.inventory.includes(a.name); const e = state.equipped === a.name; return `<div class="inv-card special ${e ? 'equipped' : ''}" ${o ? `onclick="equipAura('${a.name.replace(/'/g, "\\'")}', true)"` : ''} style="${o ? '' : 'opacity:0.6'}"><div class="icon" style="color:${a.color}">${a.icon}</div><div class="name" style="color:${a.color}">${a.name}</div><div class="rarity">${a.rarity}</div><div class="chance">1 in ${a.chance}</div>${e ? `<div class="equip-tag">Equipped</div>` : o ? `<div class="equip-tag" style="opacity:0.5">Tap to equip</div>` : ''}</div>`; }).join('')}</div>`; }
+  else if (invTab === 'potions') { content = Object.entries(POTIONS).map(([k, p]) => { const o = state.potions[k + 'Count']; return `<div style="display:flex;gap:10px;align-items:center;background:rgba(20,12,40,0.7);border-radius:10px;padding:10px;margin-bottom:6px;"><div style="flex:1"><div style="font-weight:700;font-size:12.5px;color:${p.color}">${p.label}</div><div style="font-size:10.5px;opacity:0.7">${p.effect} • ${o}</div></div><button onclick="usePotion('${k}')" ${o < 1 ? 'disabled' : ''} style="background:linear-gradient(180deg,#3a8a5a,#1a4a30);">Use</button></div>`; }).join(''); }
+  else { content = Object.entries(GEAR).map(([k, g]) => { const lv = gearLevel(k); return `<div style="display:flex;gap:10px;align-items:center;background:rgba(20,12,40,0.7);border-radius:10px;padding:10px;margin-bottom:6px;"><div style="flex:1"><div style="font-weight:700;font-size:12.5px;color:${g.color}">${g.label}</div><div style="font-size:10.5px;opacity:0.7">${g.effect}</div></div><div style="opacity:0.7;font-weight:700">Lv.${lv}</div></div>`; }).join(''); }
+  openModal(`<h2>${escapeHtml(state.playerName)}'s Inventory</h2><div class="inv-stats"><span>Coins <b>${state.coins.toLocaleString()}</b></span><span>Luck <b>${luckMultiplier().toFixed(2)}x</b></span></div>${tabs}${content}<button class="modal-btn close-btn" onclick="closeModal()">Close</button>`);
+}
+function openIndex() { const d = state.discovered || []; const total = ALL_AURAS.length, f = d.length; const pct = Math.round((f / total) * 100); const sorted = [...ALL_AURAS].sort((a, b) => b.chance - a.chance); const g = {}; sorted.forEach(a => { let k; if (a.isExclusive) k = `Ex|${a.rarity}`; else if (a.isSpecial) k = `Sp|${a.rarity}`; else if (a.biome) k = `${a.rarity}|${a.biome}`; else k = a.rarity; if (!g[k]) g[k] = []; g[k].push(a); }); const RO = ["Common", "Uncommon", "Rare", "Legendary", "Mythic", "Divine", "Void"]; const RC = { Common: "#9d9d9d", Uncommon: "#7ecb7e", Rare: "#5a9bff", Legendary: "#ffb84d", Mythic: "#ff5a5a", Divine: "#ffe066", Void: "#ff5ec8" }; let h = `<h2>Aura Index</h2><div class="inv-stats"><span>Discovered <b>${f}/${total}</b></span><span>${pct}%</span><span>Rolls <b>${state.totalRolls}</b></span></div><div style="height:8px;background:rgba(0,0,0,0.4);border-radius:999px;overflow:hidden;margin:10px 0 16px"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#7a5aff,#ff9ecb);"></div></div>`; RO.forEach(r => { const l = g[`Ex|${r}`]; if (l && l.length) h += `<div class="panel-section-title" style="color:#c8a0ff">✦ Exclusive ${r} — ${l.filter(a => d.includes(a.name)).length}/${l.length}</div><div class="inv-grid">${l.map(a => auraCardHTML(a, d)).join('')}</div>`; }); RO.forEach(r => { const l = g[`Sp|${r}`]; if (l && l.length) h += `<div class="panel-section-title" style="color:#ffd76e">★ Special ${r} — ${l.filter(a => d.includes(a.name)).length}/${l.length}</div><div class="inv-grid">${l.map(a => auraCardHTML(a, d)).join('')}</div>`; }); RO.forEach(r => { const b = g[r]; if (b) h += `<div class="panel-section-title" style="color:${RC[r]}">${r} — ${b.filter(a => d.includes(a.name)).length}/${b.length}</div><div class="inv-grid">${b.map(a => auraCardHTML(a, d)).join('')}</div>`; BIOME_ORDER.forEach(bk => { const k = `${r}|${bk}`; const l = g[k]; if (!l) return; const bi = BIOMES[bk]; h += `<div class="panel-section-title" style="color:${bi.color}">${r} • ${bi.name} — ${l.filter(a => d.includes(a.name)).length}/${l.length}</div><div class="inv-grid">${l.map(a => auraCardHTML(a, d)).join('')}</div>`; }); }); h += `<button class="modal-btn close-btn" onclick="closeModal()">Close</button>`; openModal(h); }
+function auraCardHTML(a, d) { const f = d.includes(a.name); const b = a.biome ? BIOMES[a.biome] : null; const c = a.isSpecial ? 'special' : (a.isExclusive ? 'exclusive' : ''); return `<div class="inv-card ${f ? '' : 'locked'} ${c}"><div class="icon" style="color:${f ? a.color : '#555'}">${f ? a.icon : '?'}</div><div class="name" style="color:${f ? a.color : '#666'}">${f ? a.name : '???'}</div><div class="rarity">${a.rarity}</div><div class="chance">1 in ${a.chance}</div></div>`; }
+function equipAura(name, fm) { state.equipped = (state.equipped === name) ? null : name; addFeedSystem(state.equipped ? `Equipped ${name}.` : 'Unequipped.'); updateHUD(); scheduleSave(); if (fm) { if (modalBox.querySelector('h2')?.textContent.includes('Inventory')) renderInventoryModal(); } }
+function usePotion(k) { const ck = k + 'Count'; if (state.potions[ck] < 1) return; state.potions[ck]--; addFeedSystem(`Used ${POTIONS[k].label}.`); updateHUD(); scheduleSave(); renderInventoryModal(); }
+function gearLevel(k) { const m = { luck: 'gearLuck', speed: 'gearSpeed', fortune: 'gearFortune', crit: 'gearCrit', multi: 'gearMulti', wisdom: 'gearWisdom' }; return state[m[k]]; }
+function gearCost(k) { const g = GEAR[k]; const lv = gearLevel(k); return g.baseCost + lv * Math.round(g.baseCost * 1.3); }
+const AVATAR_COLORS = ["#9b6bff", "#ff8ab6", "#6ecb6e", "#7fd4ff", "#ffd76e", "#ff6a3a", "#ff5ec8", "#7ef9ff", "#b96eff", "#5a9bff", "#e8c070", "#a8a8b8", "#ff4a6a", "#4a2a8a", "#ffffff", "#2a2a3a", "#b0ffd8", "#ffb84d", "#c8a0ff", "#5ab87a"];
+const RO_LIST = ["Common", "Uncommon", "Rare", "Legendary", "Mythic", "Divine", "Void"];
+const RC_MAP = { Common: "#9d9d9d", Uncommon: "#7ecb7e", Rare: "#5a9bff", Legendary: "#ffb84d", Mythic: "#ff5a5a", Divine: "#ffe066", Void: "#ff5ec8" };
+function openSettings() {
+  const ch = AVATAR_COLORS.map(c => `<div class="color-swatch ${state.avatarColor === c ? 'selected' : ''}" style="background:linear-gradient(135deg, ${lighten(c, 30)}, ${c} 55%, ${darken(c, 30)})" onclick="setAvatarColor('${c}')"></div>`).join('');
+  const sh = `<div class="shape-option ${state.avatarShape === 'doll' ? 'selected' : ''}" onclick="setAvatarShape('doll')"><div class="shape-preview doll-preview"></div><span>Normal</span></div><div class="shape-option ${state.avatarShape === 'orb' ? 'selected' : ''}" onclick="setAvatarShape('orb')"><div class="shape-preview orb-preview"></div><span>Orb</span></div><div class="shape-option ${state.avatarShape === 'star' ? 'selected' : ''}" onclick="setAvatarShape('star')"><div class="shape-preview star-preview"></div><span>Star</span></div><div class="shape-option ${state.avatarShape === 'cat' ? 'selected' : ''}" onclick="setAvatarShape('cat')"><div class="shape-preview cat-preview"></div><span>Cat</span></div>`;
+  const rh = RO_LIST.map(r => { const on = state.cutsceneRarities[r] !== false; return `<div class="rarity-toggle ${on ? 'on' : ''}" onclick="toggleRarity('${r}')"><div><div class="r-name"><span class="r-dot" style="background:${RC_MAP[r]}"></span>${r}</div><div class="r-desc">${on ? 'Enabled' : 'Disabled'}</div></div><div class="r-switch"></div></div>`; }).join('');
+  const dm = state.deviceMode || 'auto';
+  const dl = dm === 'auto' ? `Auto (${isMobileDevice() ? 'Mobile' : 'Desktop'})` : dm === 'mobile' ? 'Force Mobile' : 'Force Desktop';
+  const dh = dm === 'auto' ? 'Detected automatically.' : dm === 'mobile' ? 'Mobile controls always shown.' : 'Mobile controls always hidden.';
+  openModal(`<h2>Settings</h2>
+    <div class="setting-section"><h3>Player Name</h3><input id="playerNameInput" class="name-input" type="text" maxlength="20" value="${escapeHtml(state.playerName)}" oninput="previewName(this.value)" onchange="savePlayerName(this.value)"/><div class="name-preview">Preview: <b id="namePreview">${escapeHtml(state.playerName)}</b></div></div>
+    <div class="setting-section"><h3>Body Style</h3><div class="shape-grid">${sh}</div></div>
+    <div class="setting-section"><h3>Body Color</h3><div class="color-grid">${ch}</div></div>
+    <div class="setting-section"><h3>Cutscenes</h3><div class="rarity-toggles">${rh}</div></div>
+    <div class="setting-section"><h3>Cutscene Speed</h3><div style="display:flex;gap:6px"><button onclick="setCutsceneSpeed(0.5)" class="modal-btn" style="flex:1">Slow</button><button onclick="setCutsceneSpeed(1.0)" class="modal-btn" style="flex:1">Normal</button><button onclick="setCutsceneSpeed(1.8)" class="modal-btn" style="flex:1">Fast</button></div></div>
+    <div class="setting-section"><h3>Controls Mode</h3>
+      <div class="toggle-row ${dm === 'auto' ? 'on' : ''}" onclick="setDeviceMode('auto')"><div><div class="tr-label">Auto</div><div class="tr-hint">Detected automatically</div></div><div class="tr-switch"></div></div>
+      <div class="toggle-row ${dm === 'mobile' ? 'on' : ''}" onclick="setDeviceMode('mobile')"><div><div class="tr-label">Force Mobile</div><div class="tr-hint">Always show joystick</div></div><div class="tr-switch"></div></div>
+      <div class="toggle-row ${dm === 'desktop' ? 'on' : ''}" onclick="setDeviceMode('desktop')"><div><div class="tr-label">Force Desktop</div><div class="tr-hint">Hide mobile controls</div></div><div class="tr-switch"></div></div>
+      <p style="font-size:11px;opacity:0.65;margin-top:6px">Currently: <b>${dl}</b> — ${dh}</p>
+    </div>
+    <div class="setting-section"><h3>Save &amp; Backup</h3><div class="backup-row"><button onclick="saveGame(true)">Save</button><button onclick="exportSave()">Export</button><button onclick="importSavePrompt()">Import</button></div><button class="modal-btn" style="margin-top:8px; background:linear-gradient(180deg,#2a5a3a,#1a3a20);" onclick="closeModal(); openBackupManager();">Backups &amp; Recovery</button></div>
+    <button class="modal-btn close-btn" onclick="closeModal()">Close</button>`);
+}
+function setDeviceMode(m) { state.deviceMode = m; applyDeviceClass(); scheduleSave(); openSettings(); }
+function setAvatarColor(c) { state.avatarColor = c; updateHUD(); scheduleSave(); openSettings(); }
+function toggleRarity(r) { state.cutsceneRarities[r] = !(state.cutsceneRarities[r] !== false); scheduleSave(); openSettings(); }
+function setCutsceneSpeed(s) { state.cutsceneSpeed = s; scheduleSave(); openSettings(); }
+function previewName(v) { const e = document.getElementById('namePreview'); if (e) e.textContent = v.trim() || DEFAULT_PLAYER_NAME; }
+function savePlayerName(v) { const t = (v || '').trim().slice(0, 20); state.playerName = t || DEFAULT_PLAYER_NAME; updateHUD(); scheduleSave(); }
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+
+// NPC DIALOGUES
+function openAiko() { const rdy = Date.now() >= state.questCooldown; openModal(`<h2>⛩️ Aiko — Shrine Maiden</h2><div class="dialogue" style="--glow:#ff8ab6">"The spirits are restless today..."</div><p>Quests: <b>${state.questsCompleted}</b></p>${rdy ? `<button class="modal-btn" onclick="doQuest()">Accept Quest (+250🪙, +1 Luck)</button>` : `<p style="opacity:0.7">Next in ${Math.ceil((state.questCooldown - Date.now()) / 1000)}s</p>`}<button class="modal-btn close-btn" onclick="closeModal()">Close</button>`); }
+function doQuest() { if (Date.now() < state.questCooldown) return; state.coins += 250; state.potions.luckCount++; state.questsCompleted++; state.questCooldown = Date.now() + 60000; addFeedSystem('Quest complete!'); updateHUD(); scheduleSave(); closeModal(); }
+function openNaomi() { const rows = Object.entries(POTIONS).map(([k, p]) => { const o = state.potions[k + 'Count']; const has = state.inventory.includes(p.craftFrom); return `<button class="modal-btn" onclick="craftPotion('${k}')" ${has ? '' : 'disabled'}>Craft ${p.label} — 1× ${p.craftFrom} — ${o}</button>`; }).join(''); openModal(`<h2>🧪 Naomi — Witch</h2><div class="dialogue" style="--glow:#b28aff">"Bring me an aura and I'll brew something..."</div>${rows}<button class="modal-btn close-btn" onclick="closeModal()">Close</button>`); }
+function craftPotion(k) { const p = POTIONS[k]; const i = state.inventory.indexOf(p.craftFrom); if (i === -1) return; state.inventory.splice(i, 1); state.potions[k + 'Count']++; addFeedSystem(`Crafted ${p.label}.`); updateHUD(); scheduleSave(); openNaomi(); }
+function openMika() { const rows = Object.entries(POTIONS).map(([k, p]) => { const o = state.potions[k + 'Count']; const c = state.coins >= p.cost; return `<button class="modal-btn" onclick="buyPotion('${k}')" ${c ? '' : 'disabled'}>Buy ${p.label} — ${p.cost}🪙 — ${o}</button>`; }).join(''); openModal(`<h2>🛒 Mika — Merchant</h2><div class="dialogue" style="--glow:#ffc95e">"Fresh potions!"</div>${rows}<button class="modal-btn close-btn" onclick="closeModal()">Close</button>`); }
+function buyPotion(k) { const p = POTIONS[k]; if (state.coins < p.cost) return; state.coins -= p.cost; state.potions[k + 'Count']++; updateHUD(); scheduleSave(); openMika(); }
+function openAnvil() { const rows = Object.entries(GEAR).map(([k, g]) => { const lv = gearLevel(k); const c = gearCost(k); const mx = lv >= g.maxLevel; const ca = state.coins >= c && !mx; return `<button class="modal-btn" onclick="forge('${k}')" ${ca ? '' : 'disabled'}>Forge ${g.label} Lv.${lv} → ${lv + 1} — ${mx ? 'MAX' : c.toLocaleString() + '🪙'}</button>`; }).join(''); openModal(`<h2>⚒️ The Anvil</h2><div class="dialogue">"Only the strongest wills forge the finest gear."</div>${rows}<button class="modal-btn close-btn" onclick="closeModal()">Close</button>`); }
+function forge(k) { const g = GEAR[k]; const lv = gearLevel(k); if (lv >= g.maxLevel) return; const c = gearCost(k); if (state.coins < c) return; state.coins -= c; const m = { luck: 'gearLuck', speed: 'gearSpeed', fortune: 'gearFortune', crit: 'gearCrit', multi: 'gearMulti', wisdom: 'gearWisdom' }; state[m[k]]++; updateHUD(); scheduleSave(); openAnvil(); }
+
+function tickBiome() { const now = Date.now(); const e = now - state.biomeStartedAt; const rem = Math.max(0, BIOME_DURATION - e); const m = Math.floor(rem / 60000), s = Math.floor((rem % 60000) / 1000); document.getElementById('biomeTimer').textContent = `${m}:${s.toString().padStart(2, '0')}`; if (e >= BIOME_DURATION) { state.biomeIndex = (state.biomeIndex + 1) % BIOME_ORDER.length; state.biomeStartedAt = now; const b = BIOMES[currentBiomeKey()]; addFeedSystem(`Biome → ${b.name}`); const bn = document.getElementById('biomeBanner'); document.getElementById('bannerName').textContent = b.name; document.getElementById('bannerDesc').textContent = b.desc; bn.classList.add('show'); setTimeout(() => bn.classList.remove('show'), 2200); renderBiome(); scheduleSave(); } }
+setInterval(tickBiome, 500);
+
+// ============================================================
+// RENDER — with self-heal check
+// ============================================================
+function renderBiome() {
+  try {
+    const bk = currentBiomeKey(); const b = BIOMES[bk];
+    document.documentElement.style.setProperty('--biome-bg', b.bg);
+    world.style.background = b.bg;
+    viewport.style.background = b.bg;
+    document.getElementById('biomeName').textContent = b.name;
+    document.getElementById('biomeTag').style.setProperty('--biome-color', b.color);
+    let html = '';
+    html += `<div class="spawn-marker" style="left:${SPAWN_X}px; top:${SPAWN_Y + 30}px;"><div class="glow-pool"></div><div class="base-ring"></div><div class="mote m1"></div><div class="mote m2"></div><div class="mote m3"></div></div>`;
+    for (const s of structurePositions) html += `<div style="position:absolute; left:${s.x}px; top:${s.y}px; transform:translate(-50%,-100%)">${spriteHTML(s.type)}</div>`;
+    for (const d of decorPositions) {
+      let v = d.variant || '';
+      if (b.decor === 'snowy') { if (d.type === 'tree') v = 'snowy'; else if (d.type === 'rock') v = 'snowy'; else if (d.type === 'flower' || d.type === 'grass' || d.type === 'mushroom') continue; }
+      if (b.decor === 'desert' && (d.type === 'flower' || d.type === 'mushroom' || d.type === 'bush')) continue;
+      if (b.decor === 'void' && d.type === 'flower') continue;
+      html += `<div style="position:absolute; left:${d.x}px; top:${d.y}px; transform:translate(-50%,-100%)">${spriteHTML(d.type, v)}</div>`;
+    }
+    world.innerHTML = html;
+    world.appendChild(avatarEl);
+    for (const id in npcEls) world.appendChild(npcEls[id]);
+    avatarEl.style.left = player.x + 'px';
+    avatarEl.style.top = player.y + 'px';
+    applyAvatarShape();
+    applyAuraVisuals();
+    // Force camera recalc immediately
+    cameraRecalcCount = 0;
+    updateCamera();
+    // And schedule a follow-up in case layout shifts
+    setTimeout(updateCamera, 100);
+    setTimeout(updateCamera, 400);
+  } catch (err) {
+    console.error('renderBiome error:', err);
+    try { world.appendChild(avatarEl); for (const id in npcEls) world.appendChild(npcEls[id]); } catch (e) {}
+  }
+}
+
+// CUTSCENE
+const cutscene = document.getElementById('cutscene');
+let cutTimer = null, cutCallback = null, cutRunning = false;
+function playCutscene(a, cb) { if (cutRunning) return; cutRunning = true; cutCallback = cb; const ic = document.getElementById('cutIcon'); const nm = document.getElementById('cutName'); const rr = document.getElementById('cutRarity'); const cc = document.getElementById('cutChance'); const pt = document.getElementById('particles'); const rys = cutscene.querySelector('.rays'); cutscene.style.color = a.color; rys.style.color = a.color; nm.style.color = a.color; rr.style.color = a.color; ic.textContent = a.icon; nm.textContent = a.name; rr.textContent = a.rarity; cc.textContent = `1 in ${a.chance}`; pt.innerHTML = ''; for (let i = 0; i < (IS_MOBILE ? 24 : 44); i++) { const p = document.createElement('div'); p.className = 'particle'; p.style.background = a.color; p.style.left = Math.random() * 100 + '%'; p.style.top = (60 + Math.random() * 40) + '%'; p.style.animationDelay = (Math.random() * 1.6) + 's'; pt.appendChild(p); } cutscene.classList.add('show'); let dur = a.rarity === 'Void' ? 5000 : a.rarity === 'Divine' ? 4200 : 3200; dur = dur / (state.cutsceneSpeed || 1); cutTimer = setTimeout(endCutscene, dur); }
+function skipCutscene() { if (cutTimer) clearTimeout(cutTimer); endCutscene(); }
+function endCutscene() { cutscene.classList.remove('show'); state.inCutscene = false; cutRunning = false; const cb = cutCallback; cutCallback = null; if (cb) cb(); scheduleSave(); }
+
+const modal = document.getElementById('modal'); const modalBox = document.getElementById('modalBox');
+function openModal(h) { modalBox.innerHTML = h; modal.style.display = 'flex'; if (IS_MOBILE) closeMobileSidebar(); }
+function closeModal() { modal.style.display = 'none'; }
+modal.onclick = e => { if (e.target === modal) closeModal(); };
+
+function enterWorld() {
+  document.getElementById('startScreen').classList.add('hidden');
+  state.hasEntered = true;
+  scheduleSave();
+  player.x = SPAWN_X; player.y = SPAWN_Y;
+  updatePlayerPos();
+  applyDeviceClass();
+  applySidebarState();
+  requestAnimationFrame(() => requestAnimationFrame(() => { updateCamera(); setTimeout(updateCamera, 200); setTimeout(updateCamera, 600); }));
+  if (state.totalRolls === 0) {
+    addFeedSystem(`Welcome to Aura Forge, ${state.playerName}!`);
+    if (IS_MOBILE) addFeedSystem('Joystick to move. ROLL to roll. TALK near NPCs.');
+    else addFeedSystem('WASD to move, SPACE to roll, E to interact.');
+    addFeedSystem('💰 Sell duplicates for coins!');
+  } else addFeedSystem(`Welcome back, ${state.playerName}!`);
+}
+
+function init() {
+  applyDeviceClass();
+  const ss = document.getElementById('startScreen');
+  const lr = loadGameWithFallback();
+  deviceMode = state.deviceMode || 'auto';
+  applyDeviceClass();
+  if (lr.recovered) showRestoreBanner('🛡️ Backup restored', 'Primary was missing or corrupt.', 'warning');
+  else if (lr.source === 'fresh' && lr.error) showRestoreBanner('⚠️ Save unreadable', 'Starting fresh.', 'error');
+  else if (lr.migrated && lr.migrated.length) showRestoreBanner('✓ Save upgraded', `Migrated: ${lr.migrated.join(', ')}`, 'success');
+  if (!state.specialAuras || state.specialAuras.length === 0) { state.specialAuras = generateSpecialAurasForSave(10, []); state.lastSpecialAuraAt = Date.now(); rebuildAuraPool(); }
+  else { regenerateActiveSpecials(); rebuildAuraPool(); }
+  if (!state.nextSelenaVisitAt || state.nextSelenaVisitAt < Date.now() - 1000) state.nextSelenaVisitAt = Date.now() + 60 * 1000;
+  generateWorldDecor();
+  // Double rAF ensures layout is measured
+  requestAnimationFrame(() => {
+    renderBiome();
+    if (state.hasEntered) ss.classList.add('hidden');
+    player.x = state.playerX ?? SPAWN_X; player.y = state.playerY ?? SPAWN_Y;
+    updatePlayerPos();
+    updateHUD();
+    applyAvatarShape();
+    applySidebarState();
+    document.getElementById('autoSwitch').classList.toggle('on', state.autoRoll);
+    document.querySelectorAll('.auto-options button').forEach(b => b.classList.toggle('active', b.dataset.mode === state.autoMode));
+    if (state.autoRoll) startAutoLoop();
+    tickBiome(); tickSelena();
+    if (IS_MOBILE) initJoystick();
+    checkOrientation();
+    setInterval(() => saveGame(false), 15000);
+    scheduleBackupLoop();
+    // Aggressive camera recalc for the first second
+    setTimeout(updateCamera, 50);
+    setTimeout(updateCamera, 200);
+    setTimeout(updateCamera, 500);
+  });
+}
+window.addEventListener('beforeunload', () => { try { saveGame(false); } catch (e) {} });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { try { saveGame(false); } catch (e) {} } });
+init();
+document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+let lte = 0;
+document.addEventListener('touchend', e => { const n = Date.now(); if (n - lte <= 300) e.preventDefault(); lte = n; }, { passive: false });
+</script>
+</body>
+</html>
